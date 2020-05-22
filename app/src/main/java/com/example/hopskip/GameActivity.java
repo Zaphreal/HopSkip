@@ -3,6 +3,7 @@ package com.example.hopskip;
 import android.annotation.SuppressLint;
 import android.content.res.Resources;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.os.Handler;
 import android.view.MotionEvent;
 import android.view.View;
@@ -11,27 +12,34 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import androidx.appcompat.app.AppCompatActivity;
 import android.os.Bundle;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
     final int DELAY = 20;
-    final public int FLOOR_HEIGHT = (int)(Resources.getSystem().getDisplayMetrics().heightPixels * 0.6);
+
     final float ACC = 2f;
 
     Handler handler = new Handler();
     Runnable runnable;
     float vX, vY;
+    public int floorHeight;
 
+    ConstraintLayout screen;
     RelativeLayout rl;
-    ImageView player;
+    ImageView pView;
     ImageView indicator;
+    View bottomHitbox;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_activity);
 
-        rl = findViewById(R.id.background);
+        screen = findViewById(R.id.background);
+        bottomHitbox = findViewById(R.id.bottom_hitbox);
+
+        rl = findViewById(R.id.indicator_box);
         ViewGroup.LayoutParams params = rl.getLayoutParams();
         Point size = new Point();
         getWindowManager().getDefaultDisplay().getSize(size);
@@ -43,9 +51,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         indicator.setImageDrawable(getDrawable(R.drawable.indicator));
         indicator.setVisibility(View.VISIBLE);
         //Set player character to selected image
-        player = findViewById(R.id.player);
-        player.setImageDrawable(getDrawable(R.drawable.frog));
-        player.setOnTouchListener(this);
+        pView = findViewById(R.id.player);
+        pView.setImageDrawable(getDrawable(R.drawable.frog));
+        pView.setOnTouchListener(this);
 
     }
 
@@ -74,9 +82,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     return;
                 }
                 vY += ACC;
-                player.animate()
-                        .x(player.getX() + vX)
-                        .y(player.getY() + vY)
+                pView.animate()
+                        .x(pView.getX() + vX)
+                        .y(pView.getY() + vY)
                         .setDuration(0)
                         .start();
 
@@ -86,10 +94,29 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     }
 
     public boolean onGround() {
-        if (player.getY() >= FLOOR_HEIGHT) {
-            return true;
+
+        Rect pBounds = new Rect((int)pView.getX()+(int)(pView.getWidth()*0.4), (int)pView.getY()+pView.getHeight(), (int)pView.getX()+pView.getWidth()/2, (int)pView.getY()+pView.getHeight()+(int)(pView.getHeight()*0.1));
+        //pView.getHitRect(pBounds);                              // register player hitbox
+
+
+        for (int i = 0; i < screen.getChildCount(); i++) {      // iterate through all views on screen
+            View v = screen.getChildAt(i);
+            if (v.getX()+pView.getWidth() < pView.getX() || v.getX() > pView.getX() + pView.getWidth()*2) {
+                continue;
+            }
+            if (v instanceof ImageView && !v.equals(pView)) {   // if is image and not the player
+                Rect bounds = new Rect();
+                v.getHitRect(bounds);
+//                if (bounds.contains((int)pView.getX() + pView.getWidth()/2, (int)pView.getY() + pView.getHeight())) {
+//                    return true;
+//                }
+                System.out.println("pBounds: " + pBounds + ", bounds: " + bounds);
+                if (Rect.intersects(pBounds, bounds)) {         // check if image and player intersect
+                    return true;                                // if they do, return true, else continue
+                }
+            }
         }
-        return false;
+        return false;                                           // if not touching anything, return false
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -123,6 +150,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 break;
 
             case MotionEvent.ACTION_MOVE:
+                indicator.bringToFront();
                 indicator.animate()
                         .x(event.getRawX())
                         .y(event.getRawY())
