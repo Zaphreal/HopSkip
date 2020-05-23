@@ -6,14 +6,6 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         tools:context=".GameActivity" android:id="@+id/background">
-    <RelativeLayout
-            android:orientation="vertical"
-            android:layout_width="60dp"
-            android:layout_height="60dp"
-            android:id="@+id/indicator_box" android:visibility="visible"
-            app:layout_constraintTop_toTopOf="@+id/player" app:layout_constraintStart_toStartOf="@+id/player"
-            app:layout_constraintBottom_toBottomOf="@+id/player" app:layout_constraintEnd_toEndOf="@+id/player">
-    </RelativeLayout>
     <ImageView
             android:layout_width="60dp"
             android:layout_height="60dp" app:srcCompat="@drawable/frog" android:id="@+id/player"
@@ -102,6 +94,13 @@
             app:layout_constraintBottom_toTopOf="@+id/dirt00010"/>
     <ImageView
             android:layout_width="60dp"
+            android:layout_height="60dp" app:srcCompat="@drawable/grass" android:id="@+id/grass00014"
+            app:layout_constraintStart_toStartOf="parent"
+            tools:ignore="ContentDescription"
+            android:layout_marginStart="120dp" app:layout_constraintBottom_toTopOf="@+id/grass00003"
+            android:layout_marginBottom="120dp"/>
+    <ImageView
+            android:layout_width="60dp"
             android:layout_height="60dp" app:srcCompat="@drawable/dirt" android:id="@+id/dirt00001"
             tools:ignore="ContentDescription"
             app:layout_constraintStart_toEndOf="@+id/grass00009" app:layout_constraintTop_toTopOf="parent"
@@ -154,4 +153,12 @@
             android:layout_height="60dp" app:srcCompat="@drawable/dirt" android:id="@+id/dirt00010"
             tools:ignore="ContentDescription"
             app:layout_constraintStart_toEndOf="@+id/grass00012" app:layout_constraintBottom_toTopOf="@+id/dirt00009"/>
+    <RelativeLayout
+            android:orientation="vertical"
+            android:layout_width="60dp"
+            android:layout_height="60dp"
+            android:id="@+id/indicator_box" android:visibility="visible"
+            app:layout_constraintTop_toTopOf="@+id/player" app:layout_constraintStart_toStartOf="@+id/player"
+            app:layout_constraintBottom_toBottomOf="@+id/player" app:layout_constraintEnd_toEndOf="@+id/player">
+    </RelativeLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

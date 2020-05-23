@@ -16,9 +16,9 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
-    final int DELAY = 20;
+    final int DELAY = 10;
 
-    final float ACC = 2f;
+    final float ACC = 1f;
 
     Handler handler = new Handler();
     Runnable runnable;
@@ -54,7 +54,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         pView = findViewById(R.id.player);
         pView.setImageDrawable(getDrawable(R.drawable.frog));
         pView.setOnTouchListener(this);
-
     }
 
     @Override
@@ -76,6 +75,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     public void handlePhysics() {
         handler.postDelayed( runnable = new Runnable() {
             public void run() {
+                if (pView.getX() +pView.getWidth() + vX > screen.getRight()) {
+                    vX = 0;
+                }
                 if (onGround() && vY > 0) {
                     vX = 0;
                     vY = 0;
@@ -84,7 +86,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 vY += ACC;
                 pView.animate()
                         .x(pView.getX() + vX)
-                        .y(pView.getY() + vY)
+                        .y(pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight())
                         .setDuration(0)
                         .start();
 
@@ -93,30 +95,61 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         }, DELAY);
     }
 
+    public void hitCeiling() {
+        vY = 0;
+    }
+
+    public void hitWall() {
+        vX *= -0.2;
+    }
+
     public boolean onGround() {
-
-        Rect pBounds = new Rect((int)pView.getX()+(int)(pView.getWidth()*0.4), (int)pView.getY()+pView.getHeight(), (int)pView.getX()+pView.getWidth()/2, (int)pView.getY()+pView.getHeight()+(int)(pView.getHeight()*0.1));
-        //pView.getHitRect(pBounds);                              // register player hitbox
-
+        float pX = pView.getX();
+        float pY = pView.getY();
+        float pWidth = pView.getWidth();
+        float pHeight = pView.getHeight();
+        floorHeight = screen.getHeight();
 
         for (int i = 0; i < screen.getChildCount(); i++) {      // iterate through all views on screen
             View v = screen.getChildAt(i);
-            if (v.getX()+pView.getWidth() < pView.getX() || v.getX() > pView.getX() + pView.getWidth()*2) {
+
+            // skip view if (Block right < player left) OR (player right < block left)
+            if (v.getX() + v.getWidth() < pX || pX + pWidth < v.getX()) {
                 continue;
             }
+
             if (v instanceof ImageView && !v.equals(pView)) {   // if is image and not the player
-                Rect bounds = new Rect();
-                v.getHitRect(bounds);
-//                if (bounds.contains((int)pView.getX() + pView.getWidth()/2, (int)pView.getY() + pView.getHeight())) {
-//                    return true;
-//                }
-                System.out.println("pBounds: " + pBounds + ", bounds: " + bounds);
-                if (Rect.intersects(pBounds, bounds)) {         // check if image and player intersect
-                    return true;                                // if they do, return true, else continue
+
+                //if player bottom is "lower" than block top, it is a potential wall and cannot be floor
+                if (pY + pHeight > v.getY()) {
+                    // if player top is lower than block bottom
+                    if (pY >= v.getY() + v.getHeight()) {
+                        continue;
+                    }
+
+                    // if moving up and player top is higher than block bottom and player bottom is lower than block top
+                    if (vY < 0 && pY < v.getY() + v.getHeight() && pY+pHeight > v.getY()) {
+                        //TODO: hitting corners from the side will bound him down, avoiding a wall collision
+                        pView.setY(v.getY() +v.getHeight());
+                        hitCeiling();
+                        continue;
+                    }
+                    // if (moving right AND player right >= block left)
+                    if (vX > 0 && pX + pWidth > v.getX()) {
+                        pView.setX(v.getX() - pWidth);
+                        hitWall();
+                    } else if (vX < 0 && pX < v.getX() + v.getWidth()) {
+                        pView.setX(v.getX() + v.getWidth());
+                        hitWall();
+                    }
+                }
+                else if ((int)v.getY() < floorHeight) {
+                    floorHeight = (int)v.getY();
                 }
             }
         }
-        return false;                                           // if not touching anything, return false
+        //System.out.println("player bottom: " + pView.getY() + pView.getHeight() + ", floorHeight: " + floorHeight);
+        return pView.getY() + pView.getHeight() >= floorHeight;// if not touching anything, return false
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -143,8 +176,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 float dx = (v.getX() + ((float)v.getWidth()/2)) - event.getRawX(); // inverted dx: origX - targetX
                 float dy = (v.getY() + ((float)v.getHeight()/2)) - event.getRawY(); // inverted dy: origY - targetY
-                vX = dx*0.1f;                           // x-velocity
-                vY = dy*0.15f;                          // y-velocity
+                vX = dx*0.05f;                           // x-velocity
+                vY = dy*0.075f;                          // y-velocity
 
                 handlePhysics();
                 break;
