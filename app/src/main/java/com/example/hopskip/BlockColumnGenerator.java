@@ -30,11 +30,11 @@ public class BlockColumnGenerator {
             switch (name) {
                 case "grass":
                     v.setImageResource(R.drawable.grass);
-                    blockColumn[i] = new Block(width, height, v);
+                    blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
                     break;
                 case "dirt":
                     v.setImageResource(R.drawable.dirt);
-                    blockColumn[i] = new Block(width, height, v);
+                    blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
                     break;
                 case "air":
                 default:

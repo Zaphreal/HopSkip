@@ -16,14 +16,14 @@ import java.util.ArrayList;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
-    final int DELAY = 10;
+    final int DELAY = 30;
     final float ACC = 1f;
     public static final int NUM_BLOCKS_X = 12;
     public static final int NUM_BLOCKS_Y = 8;
 
     Handler handler = new Handler();
-    Runnable runnable;
-    float vX, vY, blockW, blockH;
+    Runnable playerRunnable, scrollRunnable;
+    float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
     int floorHeight;
     ArrayList<Block[]> blockList = new ArrayList<>();
 
@@ -62,6 +62,11 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         initBlockList();
         generateBlocks();
+
+        scrollSpeed = 0;
+        scrollAccel = -0.01f;
+        increaseScrollVelocity();
+        handlePhysics();
     }
 
     @Override
@@ -98,7 +103,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         // stop handling physics when game tabs out
-        handler.removeCallbacks(runnable);
+        handler.removeCallbacks(playerRunnable);
+        handler.removeCallbacks(scrollRunnable);
         super.onPause();
     }
 
@@ -144,27 +150,65 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         }
     }
 
+    //----------------------------Block Physics-------------------------------\\
+
+    private void increaseScrollVelocity() {
+        handler.postDelayed(scrollRunnable = new Runnable() {
+            public void run() {
+                scrollSpeed += scrollAccel;
+
+                handler.postDelayed(scrollRunnable, 3000);
+            }
+        }, 3000);
+    }
+
     //----------------------------Player Physics------------------------------\\
 
     private void handlePhysics() {
-        handler.postDelayed( runnable = new Runnable() {
+        handler.postDelayed(playerRunnable = new Runnable() {
             public void run() {
+                //scrollSpeed += scrollAccel;
+                boolean firstColumnEmpty = true;
+                for (int x = 0; x < blockList.size(); x++) {
+
+                    for (int y = 0; y < blockList.get(x).length; y++) {
+                        if (blockList.get(x)[y] != null) {
+                            Block block = blockList.get(x)[y];
+                            if (block.getView().getX() > -block.getWidth()) {
+                                block.getView().animate()
+                                        .x(block.getView().getX() + block.getScaleVelocity()[0] * scrollSpeed)
+                                        .y(block.getView().getY() + block.getScaleVelocity()[1])
+                                        .setDuration(0)
+                                        .start();
+
+                                if (x == 0) {
+                                    firstColumnEmpty = false;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (firstColumnEmpty && !blockList.isEmpty()) {
+                    blockList.remove(0);
+                }
+                // DIVIDER
                 if (pView.getX() +pView.getWidth() + vX > screen.getRight()) {
                     vX = 0;
                 }
                 if (onGround() && vY > 0) {
                     vX = 0;
                     vY = 0;
-                    return;
+                    //return;
+                } else {
+                    vY += ACC;
                 }
-                vY += ACC;
                 pView.animate()
-                        .x(pView.getX() + vX)
+                        .x(pView.getX() + vX + scrollSpeed)
                         .y(pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight())
                         .setDuration(0)
                         .start();
 
-                handler.postDelayed(runnable, DELAY);
+                handler.postDelayed(playerRunnable, DELAY);
             }
         }, DELAY);
     }

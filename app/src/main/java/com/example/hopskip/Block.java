@@ -5,10 +5,12 @@ import android.widget.ImageView;
 public class Block {
     private final float width, height;
     private final ImageView view;
+    private float[] scaleVelocity = new float[2];
 
-    Block(float w, float h, ImageView blockImg) {
-        width = w;
-        height = h;
+    Block(float width, float height, float[] scaleVelocity, ImageView blockImg) {
+        this.width = width;
+        this.height = height;
+        this.scaleVelocity = scaleVelocity;
         view = blockImg;
     }
 
@@ -22,5 +24,9 @@ public class Block {
 
     public ImageView getView() {
         return view;
+    }
+
+    public float[] getScaleVelocity() {
+        return scaleVelocity;
     }
 }
