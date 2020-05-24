@@ -2,6 +2,7 @@
   <dictionary name="zhami">
     <words>
       <w>hitbox</w>
+      <w>pausable</w>
     </words>
   </dictionary>
 </component>
