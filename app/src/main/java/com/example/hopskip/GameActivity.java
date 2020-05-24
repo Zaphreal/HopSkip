@@ -1,5 +1,6 @@
 package com.example.hopskip;
 
+import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
@@ -10,6 +11,8 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.Animation;
+import android.view.animation.AnimationSet;
+import android.view.animation.LinearInterpolator;
 import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -71,7 +74,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         pView.setOnTouchListener(this);
 
         initBlockList();
-        generateBlocks();
 
         scrollSpeed = -0.15f;
         scrollAccel = -0.05f;
@@ -143,31 +145,32 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
+        for (int x = 0; x < NUM_BLOCKS_X; x++) {
+            generateBlockColumn(x);
+        }
     }
 
-    private void generateBlocks() {
-        for (int x = 0; x < NUM_BLOCKS_X; x++) {
-            RelativeLayout layout = new RelativeLayout(this);
-            RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int)blockW, screenHeight);
-            layout.setLayoutParams(layoutParams);
-            layout.setX(x * blockW);
-            layout.setY(0); //POSSIBLY REMOVE?
+    private void generateBlockColumn(int idx) {
+        RelativeLayout layout = new RelativeLayout(this);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int)blockW, screenHeight);
+        layout.setLayoutParams(layoutParams);
+        layout.setX(idx * blockW);
+        layout.setY(0); //POSSIBLY REMOVE?
 
-            for (int y = 0; y < NUM_BLOCKS_Y; y++) {
-                if (blockList.get(x)[y] != null) {
-                    ImageView block = blockList.get(x)[y].getView();
-                    RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) blockList.get(x)[y].getWidth(), (int) blockList.get(x)[y].getHeight());
-                    block.setLayoutParams(params);
-                    //block.setX(x * blockW);
-                    block.setY(y * blockH);
-                    layout.addView(block);
-                    //rl.addView(block);
-                    //System.out.println("Block [x=" + x + "][y=" + y + "] = " + x * blockW + ", " + y * blockH);
-                }
+        for (int y = 0; y < NUM_BLOCKS_Y; y++) {
+            if (blockList.get(idx)[y] != null) {
+                ImageView block = blockList.get(idx)[y].getView();
+                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) blockList.get(idx)[y].getWidth(), (int) blockList.get(idx)[y].getHeight());
+                block.setLayoutParams(params);
+                //block.setX(x * blockW);
+                block.setY(y * blockH);
+                layout.addView(block);
+                //rl.addView(block);
+                //System.out.println("Block [x=" + x + "][y=" + y + "] = " + x * blockW + ", " + y * blockH);
             }
-            rl.addView(layout);
-            columnLayouts.add(layout);
         }
+        rl.addView(layout);
+        columnLayouts.add(layout);
     }
 
     //----------------------------Block Physics-------------------------------\\
@@ -245,29 +248,48 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 } else {
                     vY += ACC;
                 }
-                pView.animate()
-                        .x(pView.getX() + vX + scrollSpeed)
-                        .y(pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight())
-                        .setDuration(0)
-                        .start();
+//                pView.animate()
+//                        .x(pView.getX() + vX + scrollSpeed)
+//                        .y(pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight())
+//                        .setDuration(0)
+//                        .start();
+
+                ArrayList<Animator> animList = new ArrayList<>();
+                ObjectAnimator pAnimX = ObjectAnimator.ofFloat(pView, "X", pView.getX() + vX + scrollSpeed);
+                ObjectAnimator pAnimY = ObjectAnimator.ofFloat(pView, "Y", pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight());
+                animList.add(pAnimX);
+                animList.add(pAnimY);
 
                 // DIVIDER
                 boolean firstColumnEmpty = false;
+//                for (int i = columnLayouts.size() - 1; i >= 0; i--) {
+//                    RelativeLayout layout = columnLayouts.get(i);
+//                    if (layout.getX() > -blockW) {
+//                        layout.animate()
+//                                .x(layout.getX() + scrollSpeed)
+//                                .y(layout.getY())
+//                                .setDuration(0)
+//                                .start();
+//                    } else {
+//                        firstColumnEmpty = true;
+//                    }
+//                }
+
                 for (int i = columnLayouts.size() - 1; i >= 0; i--) {
                     RelativeLayout layout = columnLayouts.get(i);
-                    if (layout.getX() > -blockW) {
-                        layout.animate()
-                                .x(layout.getX() + scrollSpeed)
-                                .y(layout.getY())
-                                .setDuration(0)
-                                .start();
-                    } else {
-                        firstColumnEmpty = true;
-                    }
+                    ObjectAnimator anim = ObjectAnimator.ofFloat(layout, "X", layout.getX() + scrollSpeed);
+                    animList.add(anim);
                 }
+                AnimatorSet animSet = new AnimatorSet();
+                animSet.playTogether(animList);
+                animSet.setInterpolator(new LinearInterpolator());
+                animSet.setDuration(0);
+                animSet.start();
 
                 if (firstColumnEmpty && !blockList.isEmpty()) {
                     blockList.remove(0);
+                    rl.removeView(columnLayouts.get(0));
+                    columnLayouts.remove(0);
                 }
                 // DIVIDER
                 handler.postDelayed(playerRunnable, DELAY);
@@ -322,13 +344,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                         pView.setX(layout.getX() - pWidth);
                         hitWall();
-                        //System.out.println("RIGHT WALL HIT: pRight = " + pX + pWidth + ", bLeft = " + layout.getX());
+                        System.out.println("RIGHT WALL HIT: pRight = " + pX + pWidth + ", bLeft = " + layout.getX());
                     }
                     // else if (moving left and player left < block right within 20% of block)
                     else if (vX < 0 && pX < layout.getX() + v.getWidth() && pX > layout.getX() + v.getWidth() * 0.8) {
                         pView.setX(layout.getX() + v.getWidth());
                         hitWall();
-                        //System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + layout.getX() + v.getWidth());
+                        System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + layout.getX() + v.getWidth());
                     }
                 }
                 // else if block height is higher than current highest block under player, update to block
