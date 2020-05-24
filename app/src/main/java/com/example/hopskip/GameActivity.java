@@ -10,10 +10,7 @@ import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.Animation;
-import android.view.animation.AnimationSet;
 import android.view.animation.LinearInterpolator;
-import android.view.animation.TranslateAnimation;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import androidx.appcompat.app.AppCompatActivity;
@@ -24,7 +21,7 @@ import java.util.ArrayList;
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
     final int DELAY = 20;
-    final float ACC = 0.1f;
+    final float ACC = 2f;
     public static final int NUM_BLOCKS_X = 12;
     public static final int NUM_BLOCKS_Y = 8;
 
@@ -33,7 +30,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     Runnable playerRunnable, scrollRunnable;
     float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
     int floorHeight, screenHeight, screenWidth;
+    long gameTimeInMilliseconds = 0;
 
+    BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
     ArrayList<RelativeLayout> columnLayouts = new ArrayList<>();
 
@@ -49,36 +48,40 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         screen = findViewById(R.id.background);
 
-        rl = findViewById(R.id.block_layout);
-        ViewGroup.LayoutParams params = rl.getLayoutParams();
+
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
-        params.width = metrics.widthPixels;
-        params.height = metrics.heightPixels;
-
-        rl.setLayoutParams(params);
-
-        blockW = (float)metrics.widthPixels / NUM_BLOCKS_X;
-        blockH = (float)metrics.heightPixels / NUM_BLOCKS_Y;
 
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
 
+        blockW = (float)screenWidth / NUM_BLOCKS_X;
+        blockH = (float)screenHeight / NUM_BLOCKS_Y;
+
+        rl = findViewById(R.id.block_layout);
+        ViewGroup.LayoutParams params = rl.getLayoutParams();
+        params.width = screenWidth;
+        params.height = screenHeight;
+
+        rl.setLayoutParams(params);
+
         indicator = new ImageView(this);
         indicator.setImageDrawable(getDrawable(R.drawable.indicator));
-        indicator.setVisibility(View.VISIBLE);
+        //indicator.setVisibility(View.VISIBLE);
+
         //Set player character to selected image
         pView = findViewById(R.id.player);
         pView.setImageDrawable(getDrawable(R.drawable.frog));
         pView.setOnTouchListener(this);
 
+        gen = new BlockColumnGenerator(blockW, blockH, this);
         initBlockList();
 
-        scrollSpeed = -0.15f;
-        scrollAccel = -0.05f;
+        scrollAccel = -0.1f;
+        scrollSpeed = scrollAccel;
         //increaseScrollVelocity();
-        handleScroll();
+        //handleScroll();
         handlePhysics();
     }
 
@@ -124,15 +127,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     //---------------------------Block Generation-----------------------------\\
 
     private void initBlockList() {
-//        for (int x = 0; x < blockList.length; x++) {
-//            for (int y = 7; y < blockList[x].length; y++) { // SET BACK TO ZERO POTENTIALLY
-//                ImageView v = new ImageView(this);
-//                v.setImageResource(R.drawable.grass);
-//                v.setScaleType(ImageView.ScaleType.CENTER_CROP);
-//                blockList[x][y] = new Block(blockW, blockH, v);
-//            }
-//        }
-        BlockColumnGenerator gen = new BlockColumnGenerator(blockW, blockH, this);
         blockList.add(gen.generate(new String[]{"grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "grass", "dirt"}));
@@ -141,32 +135,57 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         blockList.add(gen.generate(new String[]{"", "", "", "grass", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "grass", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "grass", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
-        blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
-        for (int x = 0; x < NUM_BLOCKS_X; x++) {
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
+        for (int x = 0; x < NUM_BLOCKS_X + 2; x++) {
             generateBlockColumn(x);
         }
     }
 
+    /**
+     * Uses indexing system where 0 is leftmost column on screen to generate a RelativeLayout column of
+     * Block ImageViews.
+     *
+     * @param idx the column index to spawn the block, where 0 is the leftmost column on screen
+     */
     private void generateBlockColumn(int idx) {
         RelativeLayout layout = new RelativeLayout(this);
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int)blockW, screenHeight);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int)blockW + 1, screenHeight);
         layout.setLayoutParams(layoutParams);
         layout.setX(idx * blockW);
-        layout.setY(0); //POSSIBLY REMOVE?
 
         for (int y = 0; y < NUM_BLOCKS_Y; y++) {
-            if (blockList.get(idx)[y] != null) {
-                ImageView block = blockList.get(idx)[y].getView();
-                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) blockList.get(idx)[y].getWidth(), (int) blockList.get(idx)[y].getHeight());
-                block.setLayoutParams(params);
-                //block.setX(x * blockW);
-                block.setY(y * blockH);
-                layout.addView(block);
-                //rl.addView(block);
-                //System.out.println("Block [x=" + x + "][y=" + y + "] = " + x * blockW + ", " + y * blockH);
+            Block block = blockList.get(idx)[y];
+            if (block != null) {
+                ImageView blockImg = block.getView();
+                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
+                blockImg.setLayoutParams(params);
+                blockImg.setY(y * blockH);
+                layout.addView(blockImg);
+            }
+        }
+        rl.addView(layout);
+        columnLayouts.add(layout);
+    }
+
+    private void appendBlockColumn() {
+        RelativeLayout layout = new RelativeLayout(this);
+        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams((int)blockW + 1, screenHeight);
+        layout.setLayoutParams(layoutParams);
+        layout.setX(columnLayouts.get(columnLayouts.size() - 1).getX() + blockW);
+
+        for (int y = 0; y < NUM_BLOCKS_Y; y++) {
+            Block block = blockList.get(blockList.size() - 1)[y];
+            if (block != null) {
+                ImageView blockImg = block.getView();
+                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
+                blockImg.setLayoutParams(params);
+                blockImg.setY(y * blockH);
+                layout.addView(blockImg);
             }
         }
         rl.addView(layout);
@@ -180,36 +199,19 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             @Override
             public void run() {
 
-//                boolean firstColumnEmpty = false;
-//                for (int i = columnLayouts.size() - 1; i >= 0; i--) {
-//                    RelativeLayout layout = columnLayouts.get(i);
-//                    if (layout.getX() > -blockW) {
-//                        layout.animate()
-//                                .x(layout.getX() + scrollSpeed)
-//                                .y(layout.getY())
-//                                .setDuration(0)
-//                                .start();
-//                    } else {
-//                        firstColumnEmpty = true;
-//                    }
-//                }
-//
-//                if (firstColumnEmpty && !blockList.isEmpty()) {
-//                    blockList.remove(0);
-//                }
                 scrollHandler.postDelayed(scrollRunnable, DELAY);
             }
         }, DELAY);
     }
 
     private void increaseScrollVelocity() {
-        scrollHandler.postDelayed(new Runnable() {
+        scrollHandler.postDelayed(scrollRunnable = new Runnable() {
             public void run() {
                 scrollSpeed += scrollAccel;
                 System.out.println("Scroll speed increased to " + scrollSpeed);
-                increaseScrollVelocity();
+                scrollHandler.postDelayed(scrollRunnable, 5000);
             }
-        }, 3000);
+        }, 5000);
     }
 
     //----------------------------Player Physics------------------------------\\
@@ -217,27 +219,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     private void handlePhysics() {
         handler.postDelayed(playerRunnable = new Runnable() {
             public void run() {
-                //scrollSpeed += scrollAccel;
+                // increase scroll speed every 5 seconds
+                gameTimeInMilliseconds += 20;
+                if (gameTimeInMilliseconds % 5000 == 0) {
+                    scrollSpeed += scrollAccel;
+                }
 
-//                for (int x = 0; x < blockList.size(); x++) {
-//
-//                    for (int y = 0; y < blockList.get(x).length; y++) {
-//                        if (blockList.get(x)[y] != null) {
-//                            Block block = blockList.get(x)[y];
-//                            if (block.getView().getX() > -block.getWidth()) {
-//                                block.getView().animate()
-//                                        .x(block.getView().getX() + block.getScaleVelocity()[0] * scrollSpeed)
-//                                        .y(block.getView().getY() + block.getScaleVelocity()[1])
-//                                        .setDuration(0)
-//                                        .start();
-//
-//                                if (x == 0) {
-//                                    firstColumnEmpty = false;
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
                 if (pView.getX() + pView.getWidth() + vX > screenWidth) {
                     vX = 0;
                 }
@@ -248,11 +235,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 } else {
                     vY += ACC;
                 }
-//                pView.animate()
-//                        .x(pView.getX() + vX + scrollSpeed)
-//                        .y(pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight())
-//                        .setDuration(0)
-//                        .start();
 
                 ArrayList<Animator> animList = new ArrayList<>();
                 ObjectAnimator pAnimX = ObjectAnimator.ofFloat(pView, "X", pView.getX() + vX + scrollSpeed);
@@ -261,20 +243,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 animList.add(pAnimY);
 
                 // DIVIDER
-                boolean firstColumnEmpty = false;
-//                for (int i = columnLayouts.size() - 1; i >= 0; i--) {
-//                    RelativeLayout layout = columnLayouts.get(i);
-//                    if (layout.getX() > -blockW) {
-//                        layout.animate()
-//                                .x(layout.getX() + scrollSpeed)
-//                                .y(layout.getY())
-//                                .setDuration(0)
-//                                .start();
-//                    } else {
-//                        firstColumnEmpty = true;
-//                    }
-//                }
-
                 for (int i = columnLayouts.size() - 1; i >= 0; i--) {
                     RelativeLayout layout = columnLayouts.get(i);
                     ObjectAnimator anim = ObjectAnimator.ofFloat(layout, "X", layout.getX() + scrollSpeed);
@@ -286,10 +254,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 animSet.setDuration(0);
                 animSet.start();
 
-                if (firstColumnEmpty && !blockList.isEmpty()) {
+                if (!columnLayouts.isEmpty() && columnLayouts.get(0).getX() <= -2 * blockW) {
                     blockList.remove(0);
                     rl.removeView(columnLayouts.get(0));
                     columnLayouts.remove(0);
+
+                    blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
+                    appendBlockColumn();
                 }
                 // DIVIDER
                 handler.postDelayed(playerRunnable, DELAY);
@@ -333,24 +304,24 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     }
 
                     // if moving up and player top is within bottom 20% of block
-                    if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.8) {
+                    if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.7) {
                         //System.out.println("CEILING HIT: pY = " + pY + ", bBottom = " + v.getY() + v.getHeight());
                         pView.setY(v.getY() + v.getHeight());
                         hitCeiling();
                         continue;
                     }
                     // if (moving right AND player right > block left within left 20% of block)
-                    if (vX > 0 && pX + pWidth > layout.getX() && pX + pWidth < layout.getX() + v.getWidth() * 0.2) {
+                    if (vX > 0 && pX + pWidth > layout.getX() && pX + pWidth < layout.getX() + v.getWidth() * 0.3) {
 
                         pView.setX(layout.getX() - pWidth);
                         hitWall();
-                        System.out.println("RIGHT WALL HIT: pRight = " + pX + pWidth + ", bLeft = " + layout.getX());
+                        //System.out.println("RIGHT WALL HIT: pRight = " + pX + pWidth + ", bLeft = " + layout.getX());
                     }
                     // else if (moving left and player left < block right within 20% of block)
-                    else if (vX < 0 && pX < layout.getX() + v.getWidth() && pX > layout.getX() + v.getWidth() * 0.8) {
+                    else if (vX < 0 && pX < layout.getX() + v.getWidth() && pX > layout.getX() + v.getWidth() * 0.7) {
                         pView.setX(layout.getX() + v.getWidth());
                         hitWall();
-                        System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + layout.getX() + v.getWidth());
+                        //System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + layout.getX() + v.getWidth());
                     }
                 }
                 // else if block height is higher than current highest block under player, update to block
@@ -373,8 +344,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(130, 130);
                 indicator.setLayoutParams(params);
-                indicator.setX(event.getRawX());
-                indicator.setY(event.getRawY());
+                indicator.setX(event.getRawX() - (float)indicator.getWidth()/2);
+                indicator.setY(event.getRawY() - (float)indicator.getHeight()/2);
                 rl.addView(indicator);
                 indicator.bringToFront();
                 break;
@@ -386,17 +357,17 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 float dx = (v.getX() + ((float)v.getWidth()/2)) - event.getRawX(); // inverted dx: origX - targetX
                 float dy = (v.getY() + ((float)v.getHeight()/2)) - event.getRawY(); // inverted dy: origY - targetY
-                vX = dx*0.025f;                           // x-velocity
-                vY = dy*0.05f;                          // y-velocity
+                vX = dx*0.1f;                           // x-velocity
+                vY = dy*0.2f;                           // y-velocity
 
-                handlePhysics();
+                //handlePhysics();
                 break;
 
             case MotionEvent.ACTION_MOVE:
                 indicator.bringToFront();
                 indicator.animate()
-                        .x(event.getRawX())
-                        .y(event.getRawY())
+                        .x(event.getRawX() - (float)indicator.getWidth()/2)
+                        .y(event.getRawY() - (float)indicator.getHeight()/2)
                         .setDuration(0)
                         .start();
                 break;
