@@ -74,6 +74,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         pView = findViewById(R.id.player);
         pView.setImageDrawable(getDrawable(R.drawable.frog));
         pView.setOnTouchListener(this);
+        ConstraintLayout.LayoutParams playerSizeParams = (ConstraintLayout.LayoutParams)pView.getLayoutParams();
+        playerSizeParams.width = (int)(blockW * 0.9);
+        playerSizeParams.height = (int)(blockH * 0.9);
+        pView.setLayoutParams(playerSizeParams);
 
         gen = new BlockColumnGenerator(blockW, blockH, this);
         initBlockList();
@@ -162,7 +166,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             Block block = blockList.get(idx)[y];
             if (block != null) {
                 ImageView blockImg = block.getView();
-                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
+                RelativeLayout.LayoutParams params =
+                        new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
                 blockImg.setY(y * blockH);
                 layout.addView(blockImg);
@@ -182,7 +187,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             Block block = blockList.get(blockList.size() - 1)[y];
             if (block != null) {
                 ImageView blockImg = block.getView();
-                RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
+                RelativeLayout.LayoutParams params =
+                        new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
                 blockImg.setY(y * blockH);
                 layout.addView(blockImg);
@@ -339,6 +345,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         if (!onGround()) {
             return false;
         }
+        double squareDist = Math.pow(event.getRawX() - (v.getX() + (float)v.getWidth()/2), 2)
+                + Math.pow(event.getRawY() - (v.getY() + (float)v.getHeight()/2), 2);
+        double angle = Math.atan2((event.getRawY() - (v.getY() + (float)v.getHeight()/2)) , (event.getRawX() - (v.getX() + (float)v.getWidth()/2)));
+
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
 
@@ -354,9 +364,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_UP:
 
                 rl.removeView(indicator);
-
-                float dx = (v.getX() + ((float)v.getWidth()/2)) - event.getRawX(); // inverted dx: origX - targetX
-                float dy = (v.getY() + ((float)v.getHeight()/2)) - event.getRawY(); // inverted dy: origY - targetY
+                float dx, dy;
+                if (squareDist < Math.pow(1.5*blockW, 2)) {
+                    dx = (v.getX() + ((float) v.getWidth() / 2)) - event.getRawX(); // inverted dx: origX - targetX
+                    dy = (v.getY() + ((float) v.getHeight() / 2)) - event.getRawY(); // inverted dy: origY - targetY
+                } else {
+                    dx = -1 * (float)(Math.cos(angle) * 1.5*blockW);
+                    dy = -1 * (float)(Math.sin(angle) * 1.5*blockW);
+                }
                 vX = dx*0.1f;                           // x-velocity
                 vY = dy*0.2f;                           // y-velocity
 
@@ -366,8 +381,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_MOVE:
                 indicator.bringToFront();
                 indicator.animate()
-                        .x(event.getRawX() - (float)indicator.getWidth()/2)
-                        .y(event.getRawY() - (float)indicator.getHeight()/2)
+                        .x(squareDist < Math.pow(1.5*blockW, 2) ? event.getRawX() - (float)indicator.getWidth()/2 : (v.getX() + (float)v.getWidth()/2) + (float)(Math.cos(angle) * 1.5*blockW) - (float)indicator.getWidth()/2)
+                        .y(squareDist < Math.pow(1.5*blockW, 2) ? event.getRawY() - (float)indicator.getHeight()/2 : (v.getY() + (float)v.getHeight()/2) + (float)(Math.sin(angle) * 1.5*blockW) - (float)indicator.getHeight()/2)
                         .setDuration(0)
                         .start();
                 break;
