@@ -18,6 +18,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.ArrayList;
+import java.util.Random;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
@@ -35,6 +36,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
     ArrayList<RelativeLayout> columnLayouts = new ArrayList<>();
+    String[][] currStruct;
+    int indexOfStructure = -1, columnIndex = 0;
 
     ConstraintLayout screen;
     RelativeLayout rl;
@@ -129,7 +132,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     //---------------------------Block Generation-----------------------------\\
 
     private void initBlockList() {
-        blockList.add(gen.generate(new String[]{"grass", "dirt"}));
+        blockList.add(gen.generate(new String[]{"dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
@@ -196,6 +199,46 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         columnLayouts.add(layout);
     }
 
+    private String[][] getStructure(int idx) {
+        String[][] structure;
+        switch (idx) {
+            // basic heaven stairs
+            case 1:
+                structure = new String[10][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
+                structure[1] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
+                structure[2] = new String[]{"", "", "", "", "", "", "", "air"};
+                structure[3] = new String[]{"", "", "", "", "", "", "", "air"};
+                structure[4] = new String[]{"", "", "", "", "", "grass", ""};
+                structure[5] = new String[]{"", "", "", "", "", "grass", ""};
+                structure[6] = new String[]{"", "", "", "", "", "", "", "air"};
+                structure[7] = new String[]{"", "", "", "", "", "", "", "air"};
+                structure[8] = new String[]{"", "", "", "", "grass", ""};
+                structure[9] = new String[]{"", "", "", "", "grass", ""};
+                break;
+            // hopscotch tower
+            case 2:
+                structure = new String[9][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[2] = new String[]{"dirt", "dirt", "dirt", "dirt", "dirt", "", "", "grass"};
+                structure[3] = new String[]{"", "grass", "", "", "grass", "", "", "grass"};
+                structure[4] = new String[]{"", "", "", "", "grass", "", "", "grass"};
+                structure[5] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[7] = new String[]{"", "", "grass", "", "", "", "grass", "dirt"};
+                structure[8] = new String[]{"dirt", "", "grass", "dirt", "dirt", "dirt", "dirt", "dirt"};
+                break;
+            // flat earth, acts as case 0
+            default:
+                structure = new String[5][NUM_BLOCKS_Y];
+                for (int i = 0; i < structure.length; i++) {
+                    structure[i] = new String[]{"", "", "", "", "", "", "", "grass"};
+                }
+        }
+        return structure;
+    }
+
     //----------------------------Player Physics------------------------------\\
 
     private void handlePhysics() {
@@ -207,9 +250,15 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     scrollSpeed += scrollAccel;
                 }
 
-                if (pView.getX() + pView.getWidth() + vX > screenWidth) {
+                // if hits right edge of screen, stop velocity
+                if (pView.getX() + (float)pView.getWidth()/2 + vX >= screenWidth) {
                     vX = 0;
                 }
+                // if hits top edge of screen, stop velocity
+                if (vY < 0 && pView.getY() <= -1 * (float)pView.getHeight()/2) {
+                    vY = 0;
+                }
+
                 if (onGround() && vY > 0) {
                     vX = 0;
                     vY = 0;
@@ -241,8 +290,20 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     rl.removeView(columnLayouts.get(0));
                     columnLayouts.remove(0);
 
-                    blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
+                    if (indexOfStructure == -1) {
+                        Random rand = new Random();
+                        indexOfStructure = rand.nextInt(3);
+                        columnIndex = 0;
+                        currStruct = getStructure(indexOfStructure);
+                        System.out.println("New structure generated: index = " + indexOfStructure);
+                    }
+                    blockList.add(gen.generate(currStruct[columnIndex]));
+                    columnIndex++;
                     appendBlockColumn();
+
+                    if (columnIndex == currStruct.length) {
+                        indexOfStructure = -1;
+                    }
                 }
                 // DIVIDER
                 handler.postDelayed(playerRunnable, DELAY);
@@ -273,9 +334,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             for (int i = 0; i < layout.getChildCount(); i++) {
                 ImageView v = (ImageView)layout.getChildAt(i);
 
-                // skip view if (Block right < player left) OR (player right < block left)
+                // skip entire column if (Block right < player left) OR (player right < block left)
                 if (layout.getX() + v.getWidth() < pX || pX + pWidth < layout.getX()) {
                     break;        // if column more than a block away, skip it
+                }
+
+                // skip image if the block is air
+                if (v.getDrawable() == null) {
+                    continue;
                 }
 
                 //if player bottom is "lower" than block top, it is a potential wall and cannot be floor
@@ -340,15 +406,15 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 rl.removeView(indicator);
                 float dx, dy;
-                if (squareDist < Math.pow(1.5*blockW, 2)) {
+                if (squareDist < Math.pow(1*blockW, 2)) {
                     dx = (v.getX() + ((float) v.getWidth() / 2)) - event.getRawX(); // inverted dx: origX - targetX
                     dy = (v.getY() + ((float) v.getHeight() / 2)) - event.getRawY(); // inverted dy: origY - targetY
                 } else {
                     dx = -1 * (float)(Math.cos(angle) * 1.5*blockW);
                     dy = -1 * (float)(Math.sin(angle) * 1.5*blockW);
                 }
-                vX = dx*0.1f;                           // x-velocity
-                vY = dy*0.2f;                           // y-velocity
+                vX = dx*0.12f;                           // x-velocity
+                vY = dy*0.22f;                           // y-velocity
 
                 break;
 
@@ -356,10 +422,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 ObjectAnimator animX = ObjectAnimator.ofFloat(indicator, "X", squareDist < Math.pow(1.5*blockW, 2) ?
                         event.getRawX() - (float)indicator.getWidth()/2 :
-                        (v.getX() + (float)v.getWidth()/2) + (float)(Math.cos(angle) * 1.5*blockW) - (float)indicator.getWidth()/2);
+                        (v.getX() + (float)v.getWidth()/2) + (float)(Math.cos(angle) * 1*blockW) - (float)indicator.getWidth()/2);
                 ObjectAnimator animY = ObjectAnimator.ofFloat(indicator, "Y", squareDist < Math.pow(1.5*blockW, 2) ?
                         event.getRawY() - (float)indicator.getHeight()/2 :
-                        (v.getY() + (float)v.getHeight()/2) + (float)(Math.sin(angle) * 1.5*blockW) - (float)indicator.getHeight()/2);
+                        (v.getY() + (float)v.getHeight()/2) + (float)(Math.sin(angle) * 1*blockW) - (float)indicator.getHeight()/2);
                 AnimatorSet animSet= new AnimatorSet();
                 animSet.playTogether(animX, animY);
                 animSet.setDuration(0);

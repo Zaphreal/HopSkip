@@ -37,6 +37,8 @@ public class BlockColumnGenerator {
                     blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
                     break;
                 case "air":
+                    //v.setImageResource(R.drawable.air);
+                    blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
                 default:
             }
         }
