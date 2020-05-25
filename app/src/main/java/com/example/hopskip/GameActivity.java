@@ -10,6 +10,7 @@ import android.util.DisplayMetrics;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AnticipateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
@@ -26,8 +27,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     public static final int NUM_BLOCKS_Y = 8;
 
     Handler handler = new Handler();
-    Handler scrollHandler = new Handler();
-    Runnable playerRunnable, scrollRunnable;
+    Runnable playerRunnable;
     float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
     int floorHeight, screenHeight, screenWidth;
     long gameTimeInMilliseconds = 0;
@@ -68,7 +68,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         indicator = new ImageView(this);
         indicator.setImageDrawable(getDrawable(R.drawable.indicator));
-        //indicator.setVisibility(View.VISIBLE);
 
         //Set player character to selected image
         pView = findViewById(R.id.player);
@@ -124,7 +123,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onPause() {
         // stop handling physics when game tabs out
         handler.removeCallbacks(playerRunnable);
-        scrollHandler.removeCallbacks(scrollRunnable);
         super.onPause();
     }
 
@@ -196,28 +194,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         }
         rl.addView(layout);
         columnLayouts.add(layout);
-    }
-
-    //----------------------------Block Physics-------------------------------\\
-
-    private void handleScroll() {
-        scrollHandler.postDelayed(scrollRunnable = new Runnable() {
-            @Override
-            public void run() {
-
-                scrollHandler.postDelayed(scrollRunnable, DELAY);
-            }
-        }, DELAY);
-    }
-
-    private void increaseScrollVelocity() {
-        scrollHandler.postDelayed(scrollRunnable = new Runnable() {
-            public void run() {
-                scrollSpeed += scrollAccel;
-                System.out.println("Scroll speed increased to " + scrollSpeed);
-                scrollHandler.postDelayed(scrollRunnable, 5000);
-            }
-        }, 5000);
     }
 
     //----------------------------Player Physics------------------------------\\
@@ -357,7 +333,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 indicator.setX(event.getRawX() - (float)indicator.getWidth()/2);
                 indicator.setY(event.getRawY() - (float)indicator.getHeight()/2);
                 rl.addView(indicator);
-                indicator.bringToFront();
                 break;
 
             case MotionEvent.ACTION_CANCEL:
@@ -375,16 +350,22 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 vX = dx*0.1f;                           // x-velocity
                 vY = dy*0.2f;                           // y-velocity
 
-                //handlePhysics();
                 break;
 
             case MotionEvent.ACTION_MOVE:
-                indicator.bringToFront();
-                indicator.animate()
-                        .x(squareDist < Math.pow(1.5*blockW, 2) ? event.getRawX() - (float)indicator.getWidth()/2 : (v.getX() + (float)v.getWidth()/2) + (float)(Math.cos(angle) * 1.5*blockW) - (float)indicator.getWidth()/2)
-                        .y(squareDist < Math.pow(1.5*blockW, 2) ? event.getRawY() - (float)indicator.getHeight()/2 : (v.getY() + (float)v.getHeight()/2) + (float)(Math.sin(angle) * 1.5*blockW) - (float)indicator.getHeight()/2)
-                        .setDuration(0)
-                        .start();
+
+                ObjectAnimator animX = ObjectAnimator.ofFloat(indicator, "X", squareDist < Math.pow(1.5*blockW, 2) ?
+                        event.getRawX() - (float)indicator.getWidth()/2 :
+                        (v.getX() + (float)v.getWidth()/2) + (float)(Math.cos(angle) * 1.5*blockW) - (float)indicator.getWidth()/2);
+                ObjectAnimator animY = ObjectAnimator.ofFloat(indicator, "Y", squareDist < Math.pow(1.5*blockW, 2) ?
+                        event.getRawY() - (float)indicator.getHeight()/2 :
+                        (v.getY() + (float)v.getHeight()/2) + (float)(Math.sin(angle) * 1.5*blockW) - (float)indicator.getHeight()/2);
+                AnimatorSet animSet= new AnimatorSet();
+                animSet.playTogether(animX, animY);
+                animSet.setDuration(0);
+                animSet.setInterpolator(new AnticipateInterpolator());
+                animSet.start();
+
                 break;
 
             default:
