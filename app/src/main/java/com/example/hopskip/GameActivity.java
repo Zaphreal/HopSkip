@@ -4,6 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
+import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -14,6 +15,7 @@ import android.view.animation.AnticipateInterpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
@@ -32,6 +34,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
     int floorHeight, screenHeight, screenWidth;
     long gameTimeInMilliseconds = 0;
+    float distanceScore = 0;
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
@@ -41,8 +44,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
     ConstraintLayout screen;
     RelativeLayout rl;
-    ImageView pView;
-    ImageView indicator;
+    ImageView pView, indicator;
+    TextView distanceScoreView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +74,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         indicator = new ImageView(this);
         indicator.setImageDrawable(getDrawable(R.drawable.indicator));
+
+        distanceScoreView = findViewById(R.id.distance_score);
+        distanceScoreView.setWidth((int)(blockW * 1.25));
+        distanceScoreView.setHeight((int)blockH);
 
         //Set player character to selected image
         pView = findViewById(R.id.player);
@@ -127,6 +134,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         // stop handling physics when game tabs out
         handler.removeCallbacks(playerRunnable);
         super.onPause();
+    }
+
+    @Override
+    public void onBackPressed() {
+        // empty because nothing should happen for now
+        // TODO: open pause menu on back pressed
     }
 
     //---------------------------Block Generation-----------------------------\\
@@ -250,11 +263,16 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     scrollSpeed += scrollAccel;
                 }
 
-                // if hits right edge of screen, stop velocity
+                if (pView.getY() >= screenHeight) {
+                    playerDied();
+                    return;
+                }
+
+                // if hits right edge of screen, stop x-velocity
                 if (pView.getX() + (float)pView.getWidth()/2 + vX >= screenWidth) {
                     vX = 0;
                 }
-                // if hits top edge of screen, stop velocity
+                // if hits top edge of screen, stop y-velocity
                 if (vY < 0 && pView.getY() <= -1 * (float)pView.getHeight()/2) {
                     vY = 0;
                 }
@@ -272,6 +290,17 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 ObjectAnimator pAnimY = ObjectAnimator.ofFloat(pView, "Y", pView.getY()+pView.getHeight()+vY < floorHeight ? pView.getY() + vY: floorHeight - pView.getHeight());
                 animList.add(pAnimX);
                 animList.add(pAnimY);
+
+                distanceScore += vX / 10;
+                String text = "";
+                if (distanceScore < 0) {
+                    text += "-";
+                }
+                for (int i = 0; i < 4 - String.valueOf(Math.abs((int)distanceScore)).length(); i++) {
+                    text += "0";
+                }
+                text += String.valueOf(Math.abs((int)distanceScore));
+                distanceScoreView.setText(text);
 
                 // DIVIDER
                 for (int i = columnLayouts.size() - 1; i >= 0; i--) {
@@ -328,7 +357,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         float pY = pView.getY();
         float pWidth = pView.getWidth();
         float pHeight = pView.getHeight();
-        floorHeight = screenHeight;
+        floorHeight = screenHeight + (int)pHeight + 1;
 
         for (RelativeLayout layout : columnLayouts) {      // iterate through all views on screen
             for (int i = 0; i < layout.getChildCount(); i++) {
@@ -380,6 +409,23 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         }
         return pView.getY() + pView.getHeight() >= floorHeight;// if not touching anything, return false
     }
+
+
+    private void playerDied() {
+        handler.removeCallbacks(playerRunnable);
+
+        final Intent intent = new Intent(this, ResultsActivity.class);
+        intent.putExtra("score", distanceScoreView.getText());
+
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                startActivity(intent);
+                finish();
+            }
+        }, 1000);
+    }
+
 
     @SuppressLint("ClickableViewAccessibility")
     @Override

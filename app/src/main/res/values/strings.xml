@@ -3,4 +3,7 @@
     <string name="start">Start Game</string>
     <string name="player">Player</string>
     <string name="title_screen">title_screen</string>
+    <string name="distance_score">distance_score</string>
+    <string name="results_screen"/>
+    <string name="results_player"/>
 </resources>
