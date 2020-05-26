@@ -5,14 +5,22 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        tools:context=".MainActivity">
+        tools:context=".MainActivity" android:id="@+id/title_screen">
+    <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" app:srcCompat="@drawable/menu" android:id="@+id/imageView"
+            android:scaleType="fitXY"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" android:contentDescription="@string/title_screen"
+            app:layout_constraintHorizontal_bias="0.0" app:layout_constraintVertical_bias="1.0"/>
     <Button
             android:text="@string/start"
-            android:layout_width="312dp"
-            android:layout_height="55dp" android:id="@+id/start"
+            android:layout_width="237dp"
+            android:layout_height="50dp" android:id="@+id/start"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintHorizontal_bias="0.494" app:layout_constraintVertical_bias="0.096"
+            app:layout_constraintVertical_bias="0.52"
             android:onClick="startGame"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

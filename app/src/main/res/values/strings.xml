@@ -2,4 +2,5 @@
     <string name="app_name">HopSkip</string>
     <string name="start">Start Game</string>
     <string name="player">Player</string>
+    <string name="title_screen">title_screen</string>
 </resources>
