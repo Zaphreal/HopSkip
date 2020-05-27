@@ -1,12 +1,8 @@
 package com.example.hopskip;
 
-import android.graphics.Typeface;
-import android.util.DisplayMetrics;
-import android.view.View;
+import android.os.Bundle;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import android.os.Bundle;
-import androidx.core.widget.TextViewCompat;
 
 public class ResultsActivity extends AppCompatActivity {
 
@@ -17,5 +13,11 @@ public class ResultsActivity extends AppCompatActivity {
 
         TextView score = findViewById(R.id.final_score);
         score.setText("Score: " + getIntent().getStringExtra("score"));
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
     }
 }

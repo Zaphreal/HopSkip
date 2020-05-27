@@ -24,7 +24,7 @@ import java.util.Random;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
-    final int DELAY = 20;
+    final int DELAY = 10;
     final float ACC = 2f;
     public static final int NUM_BLOCKS_X = 12;
     public static final int NUM_BLOCKS_Y = 8;
@@ -32,9 +32,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     Handler handler = new Handler();
     Runnable playerRunnable;
     float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
-    int floorHeight, screenHeight, screenWidth;
+    int screenHeight, screenWidth, floorHeight;
     long gameTimeInMilliseconds = 0;
-    float distanceScore = 0;
+    float distanceScore = 0, backtrack = 0;
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
@@ -42,7 +42,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     String[][] currStruct;
     int indexOfStructure = -1, columnIndex = 0;
 
-    ConstraintLayout screen;
     RelativeLayout rl;
     ImageView pView, indicator;
     TextView distanceScoreView;
@@ -51,10 +50,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.game_activity);
-
-        screen = findViewById(R.id.background);
-
-
 
         DisplayMetrics metrics = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(metrics);
@@ -69,8 +64,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         ViewGroup.LayoutParams params = rl.getLayoutParams();
         params.width = screenWidth;
         params.height = screenHeight;
-
         rl.setLayoutParams(params);
+
+        gen = new BlockColumnGenerator(blockW, blockH, this);
+        initBlockList();
 
         indicator = new ImageView(this);
         indicator.setImageDrawable(getDrawable(R.drawable.indicator));
@@ -79,7 +76,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         distanceScoreView.setWidth((int)(blockW * 1.25));
         distanceScoreView.setHeight((int)blockH);
 
-        //Set player character to selected image
         pView = findViewById(R.id.player);
         pView.setImageDrawable(getDrawable(R.drawable.frog));
         pView.setOnTouchListener(this);
@@ -88,40 +84,20 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         playerSizeParams.height = (int)(blockH * 0.9);
         pView.setLayoutParams(playerSizeParams);
 
-        gen = new BlockColumnGenerator(blockW, blockH, this);
-        initBlockList();
-
-        scrollAccel = -0.1f;
+        scrollAccel = -0.2f;
         scrollSpeed = scrollAccel;
-        //increaseScrollVelocity();
-        //handleScroll();
-        handlePhysics();
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
-
     }
 
     @Override
     protected void onResume() {
         // handle physics when game starts up or resumes
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
-
+//        getWindow().getDecorView().setSystemUiVisibility(
+//                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
+//                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
+//                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
         handlePhysics();
         super.onResume();
     }
@@ -134,6 +110,17 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         // stop handling physics when game tabs out
         handler.removeCallbacks(playerRunnable);
         super.onPause();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        if (hasFocus && !handler.hasCallbacks(playerRunnable)) {
+            handlePhysics();
+        }
+        if (!hasFocus && handler.hasCallbacks(playerRunnable)) {
+            handler.removeCallbacks(playerRunnable);
+        }
+        super.onWindowFocusChanged(hasFocus);
     }
 
     @Override
@@ -234,13 +221,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure = new String[9][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
-                structure[2] = new String[]{"dirt", "dirt", "dirt", "dirt", "dirt", "", "", "grass"};
-                structure[3] = new String[]{"", "grass", "", "", "grass", "", "", "grass"};
-                structure[4] = new String[]{"", "", "", "", "grass", "", "", "grass"};
+                structure[2] = new String[]{"brick1", "brick2", "brick1", "brick2", "brick1", "", "", "grass"};
+                structure[3] = new String[]{"", "brick2", "", "", "brick1", "", "", "grass"};
+                structure[4] = new String[]{"", "", "", "", "brick1", "", "", "grass"};
                 structure[5] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
-                structure[7] = new String[]{"", "", "grass", "", "", "", "grass", "dirt"};
-                structure[8] = new String[]{"dirt", "", "grass", "dirt", "dirt", "dirt", "dirt", "dirt"};
+                structure[7] = new String[]{"", "", "brick1", "", "", "", "brick1", "grass"};
+                structure[8] = new String[]{"brick1", "", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
                 break;
             // flat earth, acts as case 0
             default:
@@ -258,12 +245,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         handler.postDelayed(playerRunnable = new Runnable() {
             public void run() {
                 // increase scroll speed every 5 seconds
-                gameTimeInMilliseconds += 20;
+                gameTimeInMilliseconds += DELAY;
                 if (gameTimeInMilliseconds % 5000 == 0) {
                     scrollSpeed += scrollAccel;
                 }
 
-                if (pView.getY() >= screenHeight) {
+                if (pView.getY() >= screenHeight || pView.getX() <= -pView.getWidth()) {
                     playerDied();
                     return;
                 }
@@ -291,15 +278,24 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 animList.add(pAnimX);
                 animList.add(pAnimY);
 
-                distanceScore += vX / 10;
-                String text = "";
-                if (distanceScore < 0) {
-                    text += "-";
+                if (vX < 0) {
+                    backtrack += vX / 10;
+                } else {
+                    if (backtrack < 0) {
+                        backtrack += vX / 10;
+                        if (backtrack > 0) {
+                            distanceScore += backtrack;
+                            backtrack = 0;
+                        }
+                    } else {
+                        distanceScore += vX / 10;
+                    }
                 }
-                for (int i = 0; i < 4 - String.valueOf(Math.abs((int)distanceScore)).length(); i++) {
+                String text = "";
+                for (int i = 0; i < 4 - String.valueOf((int)distanceScore).length(); i++) {
                     text += "0";
                 }
-                text += String.valueOf(Math.abs((int)distanceScore));
+                text += String.valueOf((int)distanceScore);
                 distanceScoreView.setText(text);
 
                 // DIVIDER
@@ -324,7 +320,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         indexOfStructure = rand.nextInt(3);
                         columnIndex = 0;
                         currStruct = getStructure(indexOfStructure);
-                        System.out.println("New structure generated: index = " + indexOfStructure);
+                        //System.out.println("New structure generated: index = " + indexOfStructure);
                     }
                     blockList.add(gen.generate(currStruct[columnIndex]));
                     columnIndex++;
@@ -353,13 +349,15 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
      * @return true if player on top of a block, false otherwise
      */
     public boolean onGround() {
-        float pX = pView.getX();
-        float pY = pView.getY();
-        float pWidth = pView.getWidth();
-        float pHeight = pView.getHeight();
-        floorHeight = screenHeight + (int)pHeight + 1;
+        float marginX = pView.getWidth() * 0.1f;
+        float marginY = pView.getHeight() * 0.1f;
+        float pX = pView.getX() + marginX;    //hitbox is center 80% of frog
+        float pY = pView.getY() + marginY;
+        float pWidth = pView.getWidth() - (2 * marginX);
+        float pHeight = pView.getHeight() - (2 * marginY);
+        floorHeight = screenHeight + pView.getHeight() + 1;
 
-        for (RelativeLayout layout : columnLayouts) {      // iterate through all views on screen
+        for (RelativeLayout layout : columnLayouts) {      // iterate through all column layouts
             for (int i = 0; i < layout.getChildCount(); i++) {
                 ImageView v = (ImageView)layout.getChildAt(i);
 
@@ -380,30 +378,33 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         continue;
                     }
 
-                    // if moving up and player top is within bottom 20% of block
+                    // if moving up and player top is within bottom 30% of block
                     if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.7) {
                         //System.out.println("CEILING HIT: pY = " + pY + ", bBottom = " + v.getY() + v.getHeight());
-                        pView.setY(v.getY() + v.getHeight());
+                        pView.setY(v.getY() + v.getHeight() - marginY);
                         hitCeiling();
                         continue;
                     }
-                    // if (moving right AND player right > block left within left 20% of block)
+                    // if (moving right AND player right > block left within left 30% of block)
                     if (vX > 0 && pX + pWidth > layout.getX() && pX + pWidth < layout.getX() + v.getWidth() * 0.3) {
 
                         pView.setX(layout.getX() - pWidth);
                         hitWall();
                         //System.out.println("RIGHT WALL HIT: pRight = " + pX + pWidth + ", bLeft = " + layout.getX());
                     }
-                    // else if (moving left and player left < block right within 20% of block)
+                    // else if (moving left and player left < block right within 30% of block)
                     else if (vX < 0 && pX < layout.getX() + v.getWidth() && pX > layout.getX() + v.getWidth() * 0.7) {
-                        pView.setX(layout.getX() + v.getWidth());
+                        pView.setX(layout.getX() + v.getWidth() - marginX);
                         hitWall();
                         //System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + layout.getX() + v.getWidth());
                     }
                 }
-                // else if block height is higher than current highest block under player, update to block
-                else if ((int) v.getY() < floorHeight) {
-                    floorHeight = (int) v.getY();
+                // if not wall or ceiling and if block height is higher than current highest block under player, update to block
+                else if (layout.getX() + v.getWidth() >= pView.getX() + 0.3*pView.getWidth()
+                        && pView.getX() + 0.7*pView.getWidth() >= layout.getX()) {
+                    if ((int) v.getY() < floorHeight) {
+                        floorHeight = (int) v.getY();
+                    }
                 }
             }
         }

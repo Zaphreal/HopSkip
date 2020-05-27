@@ -18,7 +18,7 @@ public class BlockColumnGenerator {
         Block[] blockColumn = new Block[GameActivity.NUM_BLOCKS_Y];
         for (int i = 0; i < GameActivity.NUM_BLOCKS_Y; i++) {
             ImageView v = new ImageView(context);
-            v.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            v.setScaleType(ImageView.ScaleType.FIT_XY);
 
             String name;
             if (i >= blockNames.length) {
@@ -36,8 +36,16 @@ public class BlockColumnGenerator {
                     v.setImageResource(R.drawable.dirt);
                     blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
                     break;
+                case "brick1":
+                    v.setImageResource(R.drawable.brick1);
+                    blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
+                    break;
+                case "brick2":
+                    v.setImageResource(R.drawable.brick2);
+                    blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
+                    break;
                 case "air":
-                    //v.setImageResource(R.drawable.air);
+                    // creates an ImageView with a null image resource, will be ignored by player
                     blockColumn[i] = new Block(width, height, new float[]{1.0f, 0}, v);
                 default:
             }
