@@ -5,7 +5,7 @@ import android.widget.ImageView;
 public class Block {
     private final float width, height;
     private final ImageView view;
-    private float[] scaleVelocity = new float[2];
+    private float[] scaleVelocity;
 
     Block(float width, float height, float[] scaleVelocity, ImageView blockImg) {
         this.width = width;

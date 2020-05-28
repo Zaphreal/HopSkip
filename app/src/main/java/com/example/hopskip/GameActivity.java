@@ -91,13 +91,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onResume() {
         // handle physics when game starts up or resumes
-//        getWindow().getDecorView().setSystemUiVisibility(
-//                View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION // hide nav bar
-//                        | View.SYSTEM_UI_FLAG_FULLSCREEN // hide status bar
-//                        | View.SYSTEM_UI_FLAG_IMMERSIVE);
         handlePhysics();
         super.onResume();
     }
@@ -143,7 +136,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
-        blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "move_brick", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         for (int x = 0; x < NUM_BLOCKS_X + 2; x++) {
@@ -216,8 +209,22 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[8] = new String[]{"", "", "", "", "grass", ""};
                 structure[9] = new String[]{"", "", "", "", "grass", ""};
                 break;
-            // hopscotch tower
+            // basic float pyramid
             case 2:
+                structure = new String[10][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[1] = new String[]{"", "", "", "", "grass", "", "", "grass"};
+                structure[2] = new String[]{"", "", "", "", "grass", "", "", "grass"};
+                structure[3] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[4] = new String[]{"", "", "grass", "", "", "", "", "grass"};
+                structure[5] = new String[]{"", "", "grass", "", "", "", "", "grass"};
+                structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[7] = new String[]{"", "", "", "", "grass", "", "", "grass"};
+                structure[8] = new String[]{"", "", "", "", "grass", "", "", "grass"};
+                structure[9] = new String[]{"", "", "", "", "", "", "", "grass"};
+                break;
+            // hopscotch tower
+            case 3:
                 structure = new String[9][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
@@ -228,6 +235,36 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[7] = new String[]{"", "", "brick1", "", "", "", "brick1", "grass"};
                 structure[8] = new String[]{"brick1", "", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
+                break;
+            // mission:impossible
+            case 4:
+                structure = new String[26][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[1] = new String[]{"", "", "", "", "", "grass", "", "grass"};
+                structure[2] = new String[]{"", "", "", "", "", "grass", "", "grass"};
+                structure[3] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[4] = new String[]{"", "", "", "grass", "", "", "", "grass"};
+                structure[5] = new String[]{"", "", "", "grass", "", "", "", "grass"};
+                structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[7] = new String[]{"brick1", "", "brick2", "brick1", "brick2", "brick1", "brick2", "brick1"};
+                structure[8] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
+                structure[9] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
+                structure[10] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
+                structure[11] = new String[]{"brick1", "brick2", "", "", "", "", "", "brick1"};
+                structure[12] = new String[]{"brick1", "brick2", "", "", "", "brick1", "", ""};
+                structure[13] = new String[]{"brick1", "brick2", "", "", "", "brick1", "", ""};
+                structure[14] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[15] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[16] = new String[]{"brick1", "brick2", "", "", "brick1", "", "", ""};
+                structure[17] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[18] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[19] = new String[]{"brick1", "brick2", "", "", "", "brick1", "", ""};
+                structure[20] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[21] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[22] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                structure[23] = new String[]{"brick1", "brick2", "", "", "", "", "", "brick1"};
+                structure[24] = new String[]{"brick1", "brick2", "brick2", "brick1", "brick2", "", "", "brick1"};
+                structure[25] = new String[]{"", "", "", "", "", "", "", "grass"};
                 break;
             // flat earth, acts as case 0
             default:
@@ -303,6 +340,16 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     RelativeLayout layout = columnLayouts.get(i);
                     ObjectAnimator anim = ObjectAnimator.ofFloat(layout, "X", layout.getX() + scrollSpeed);
                     animList.add(anim);
+                    for (int j = 0; j < blockList.get(i).length; j++) {
+                        Block block = blockList.get(i)[j];
+                        if (block != null && block.getScaleVelocity()[1] != 0) {
+                            block.getScaleVelocity()[2] += (float)1/blockH;
+                            block.getScaleVelocity()[3] = (float)((-(Math.PI/2)) * Math.cos((Math.PI/2) * block.getScaleVelocity()[2]));
+                            anim = ObjectAnimator.ofFloat(block.getView(), "Y",
+                                    block.getView().getY() + block.getScaleVelocity()[3]);
+                            animList.add(anim);
+                        }
+                    }
                 }
                 AnimatorSet animSet = new AnimatorSet();
                 animSet.playTogether(animList);
@@ -317,7 +364,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                     if (indexOfStructure == -1) {
                         Random rand = new Random();
-                        indexOfStructure = rand.nextInt(3);
+                        indexOfStructure = rand.nextInt(5);
                         columnIndex = 0;
                         currStruct = getStructure(indexOfStructure);
                         //System.out.println("New structure generated: index = " + indexOfStructure);
@@ -445,7 +492,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 indicator.setLayoutParams(params);
                 indicator.setX(event.getRawX() - (float)indicator.getWidth()/2);
                 indicator.setY(event.getRawY() - (float)indicator.getHeight()/2);
-                rl.addView(indicator);
+                if (indicator.getParent() == null) {
+                    rl.addView(indicator);
+                }
                 break;
 
             case MotionEvent.ACTION_CANCEL:
