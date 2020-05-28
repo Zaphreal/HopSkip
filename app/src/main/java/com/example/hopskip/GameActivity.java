@@ -5,6 +5,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.ColorFilter;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -35,6 +36,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     int screenHeight, screenWidth, floorHeight;
     long gameTimeInMilliseconds = 0;
     float distanceScore = 0, backtrack = 0;
+    boolean gamePaused = false;
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
@@ -86,13 +88,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         scrollAccel = -0.2f;
         scrollSpeed = scrollAccel;
-    }
-
-    @Override
-    protected void onResume() {
-        // handle physics when game starts up or resumes
         handlePhysics();
-        super.onResume();
     }
 
     // If onPause() is not included the threads will double up when you
@@ -101,25 +97,118 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         // stop handling physics when game tabs out
-        handler.removeCallbacks(playerRunnable);
+        if (!gamePaused) {
+            togglePauseMenu();
+        }
         super.onPause();
     }
 
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
-        if (hasFocus && !handler.hasCallbacks(playerRunnable)) {
-            handlePhysics();
-        }
         if (!hasFocus && handler.hasCallbacks(playerRunnable)) {
-            handler.removeCallbacks(playerRunnable);
+            if (!gamePaused) {
+                togglePauseMenu();
+            }
         }
         super.onWindowFocusChanged(hasFocus);
     }
 
     @Override
     public void onBackPressed() {
-        // empty because nothing should happen for now
-        // TODO: open pause menu on back pressed
+        // generate or destroy pause menu, then handle accordingly
+        togglePauseMenu();
+    }
+
+    private void togglePauseMenu() {
+        if (!gamePaused) {
+            handler.removeCallbacks(playerRunnable);
+
+            float menuHeight = screenHeight * 0.95f;
+            RelativeLayout pauseLayout = new RelativeLayout(this);
+            RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(screenWidth, screenHeight);
+            pauseLayout.setLayoutParams(params);
+            pauseLayout.setId(90000000);
+            rl.addView(pauseLayout);
+
+            ImageView filter = new ImageView(this);
+            filter.setImageResource(R.drawable.dark_filter);
+            filter.setScaleType(ImageView.ScaleType.FIT_XY);
+            filter.setLayoutParams(params);
+            pauseLayout.addView(filter);
+
+            ImageView pauseMenu = new ImageView(this);
+            pauseMenu.setImageResource(R.drawable.pause_menu);
+            pauseMenu.setScaleType(ImageView.ScaleType.FIT_XY);
+            params = new RelativeLayout.LayoutParams((int) (menuHeight / 1.5f), (int) menuHeight);
+            pauseMenu.setLayoutParams(params);
+            pauseLayout.addView(pauseMenu);
+            pauseMenu.setX(((float) screenWidth / 2f) - ((menuHeight / 1.5f) / 2f));
+            pauseMenu.setY(((float) screenHeight / 2f) - (menuHeight / 2f));
+
+            final ImageView resumeButton = new ImageView(this);
+            resumeButton.setImageResource(R.drawable.button_resume);
+            resumeButton.setScaleType(ImageView.ScaleType.FIT_XY);
+            params = new RelativeLayout.LayoutParams((int) (((7f / 9) * menuHeight) / 1.5f), (int) ((4f / 27) * menuHeight));
+            resumeButton.setLayoutParams(params);
+            pauseLayout.addView(resumeButton);
+            resumeButton.setX(((float) screenWidth / 2) - ((((7f / 9) * menuHeight) / 1.5f) / 2f));
+            resumeButton.setY(((float) screenHeight / 2) - (menuHeight / 2) + ((5f / 18) * menuHeight));
+            resumeButton.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        togglePauseMenu();
+                        handlePhysics();
+                        return true;
+                    }
+                    return event.getAction() == MotionEvent.ACTION_DOWN;
+                }
+            });
+
+            ImageView restartButton = new ImageView(this);
+            restartButton.setImageResource(R.drawable.button_restart);
+            restartButton.setScaleType(ImageView.ScaleType.FIT_XY);
+            params = new RelativeLayout.LayoutParams((int) (((7f / 9) * menuHeight) / 1.5f), (int) ((4f / 27) * menuHeight));
+            restartButton.setLayoutParams(params);
+            pauseLayout.addView(restartButton);
+            restartButton.setX(((float) screenWidth / 2) - ((((7f / 9) * menuHeight) / 1.5f) / 2f));
+            restartButton.setY(((float) screenHeight / 2) - (menuHeight / 2) + ((14f / 27) * menuHeight));
+            restartButton.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        recreate();
+                        return true;
+                    }
+                    return event.getAction() == MotionEvent.ACTION_DOWN;
+                }
+            });
+
+            ImageView quitButton = new ImageView(this);
+            quitButton.setImageResource(R.drawable.button_quit);
+            quitButton.setScaleType(ImageView.ScaleType.FIT_XY);
+            params = new RelativeLayout.LayoutParams((int) (((7f / 9) * menuHeight) / 1.5f), (int) ((4f / 27) * menuHeight));
+            quitButton.setLayoutParams(params);
+            pauseLayout.addView(quitButton);
+            quitButton.setX(((float) screenWidth / 2) - ((((7f / 9) * menuHeight) / 1.5f) / 2f));
+            quitButton.setY(((float) screenHeight / 2) - (menuHeight / 2) + ((41f / 54) * menuHeight));
+            quitButton.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        finish();
+                        return true;
+                    }
+                    return event.getAction() == MotionEvent.ACTION_DOWN;
+                }
+            });
+
+            gamePaused = true;
+        } else {
+            rl.removeView(findViewById(90000000));
+            handlePhysics();
+            gamePaused = false;
+        }
     }
 
     //---------------------------Block Generation-----------------------------\\
@@ -163,7 +252,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 RelativeLayout.LayoutParams params =
                         new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
-                blockImg.setY(y * blockH);
+                blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 layout.addView(blockImg);
             }
         }
@@ -184,7 +273,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 RelativeLayout.LayoutParams params =
                         new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
-                blockImg.setY(y * blockH);
+                blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 layout.addView(blockImg);
             }
         }
@@ -251,14 +340,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[9] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
                 structure[10] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
                 structure[11] = new String[]{"brick1", "brick2", "", "", "", "", "", "brick1"};
-                structure[12] = new String[]{"brick1", "brick2", "", "", "", "brick1", "", ""};
-                structure[13] = new String[]{"brick1", "brick2", "", "", "", "brick1", "", ""};
+                structure[12] = new String[]{"brick1", "brick2", "", "", "", "move_brick", "", ""};
+                structure[13] = new String[]{"brick1", "brick2", "", "", "", "move_brick", "", ""};
                 structure[14] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[15] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[16] = new String[]{"brick1", "brick2", "", "", "brick1", "", "", ""};
+                structure[16] = new String[]{"brick1", "brick2", "", "", "move_brick", "", "", ""};
                 structure[17] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[18] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[19] = new String[]{"brick1", "brick2", "", "", "", "brick1", "", ""};
+                structure[19] = new String[]{"brick1", "brick2", "", "", "", "move_brick", "", ""};
                 structure[20] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[21] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[22] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
@@ -276,7 +365,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         return structure;
     }
 
-    //----------------------------Player Physics------------------------------\\
+    //----------------------------Game Physics------------------------------\\
 
     private void handlePhysics() {
         handler.postDelayed(playerRunnable = new Runnable() {
