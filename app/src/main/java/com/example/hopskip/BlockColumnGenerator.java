@@ -1,7 +1,11 @@
 package com.example.hopskip;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 import android.widget.ImageView;
+
+import java.util.Objects;
 
 public class BlockColumnGenerator {
 
@@ -46,11 +50,13 @@ public class BlockColumnGenerator {
                     break;
                 case "move_brick":
                     v.setImageResource(R.drawable.brick1);
-                    blockColumn[i] = new Block(width, (height/2), new float[]{1.0f, 1.0f, 0, ((float)-Math.PI)/4}, v);
+                    // moving template: xScale, +/- num blocks to travel, time per half cycle, time variable, starting position
+                    blockColumn[i] = new Block(width, (height/2), new float[]{1.0f, 1.0f, 2.0f, 0, ((float)-Math.PI)/4}, v);
                     break;
                 case "coin":
                     v.setImageResource(R.drawable.coin_frog);
-                    blockColumn[i] = new Block(width/3, height/3, new float[]{1.0f, 0.25f, 0, ((float)-Math.PI)/4}, v);
+                    v.setTag("coin");
+                    blockColumn[i] = new Block(width/3, height/3, new float[]{1.0f, 0.2f, 0.5f, 0, 0}, v);
                     break;
                 case "air":
                     // creates an ImageView with a null image resource, will be ignored by player
