@@ -36,7 +36,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     int screenHeight, screenWidth, floorHeight;
     long gameTimeInMilliseconds = 0;
     float distanceScore = 0, backtrack = 0;
-    boolean gamePaused = false;
+    boolean gamePaused = false, userTouchingPlayer = false;
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
@@ -273,6 +273,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 RelativeLayout.LayoutParams params =
                         new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
+                blockImg.setX((blockW - block.getWidth())/2);
                 blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 layout.addView(blockImg);
             }
@@ -389,8 +390,11 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 if (vY < 0 && pView.getY() <= -1 * (float)pView.getHeight()/2) {
                     vY = 0;
                 }
+                if ((onMovingPlatform() && vX != 0 && !userTouchingPlayer)) {
+                    vX = 0;
+                }
 
-                if (onGround() && vY > 0) {
+                if ((onGround() && vY > 0)) {
                     vX = 0;
                     vY = 0;
                     //return;
@@ -643,7 +647,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 }
                 vX = dx*0.10f;                           // x-velocity
                 vY = dy*0.20f;                           // y-velocity
-
+                handler.postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        userTouchingPlayer = false;
+                    }
+                }, DELAY);
                 break;
 
             case MotionEvent.ACTION_MOVE:
@@ -659,12 +668,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 animSet.setDuration(0);
                 animSet.setInterpolator(new AnticipateInterpolator());
                 animSet.start();
-
                 break;
 
             default:
                 return false;
         }
+        userTouchingPlayer = true;
         return true;
     }
 }
