@@ -97,9 +97,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     protected void onPause() {
         // stop handling physics when game tabs out
-        if (!gamePaused) {
-            togglePauseMenu();
-        }
+//        if (!gamePaused) {
+//            togglePauseMenu();
+//        }
         super.onPause();
     }
 
@@ -121,6 +121,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
     private void togglePauseMenu() {
         if (!gamePaused) {
+
             handler.removeCallbacks(playerRunnable);
 
             float menuHeight = screenHeight * 0.95f;
@@ -158,7 +159,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
                         togglePauseMenu();
-                        handlePhysics();
                         return true;
                     }
                     return event.getAction() == MotionEvent.ACTION_DOWN;
@@ -202,12 +202,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     return event.getAction() == MotionEvent.ACTION_DOWN;
                 }
             });
-
             gamePaused = true;
+
         } else {
             rl.removeView(findViewById(90000000));
-            handlePhysics();
             gamePaused = false;
+            handlePhysics();
         }
     }
 
@@ -547,6 +547,48 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         return pView.getY() + pView.getHeight() >= floorHeight;// if not touching anything, return false
     }
 
+    public boolean onMovingPlatform() {
+        float marginX = pView.getWidth() * 0.1f;
+        float marginY = pView.getHeight() * 0.1f;
+        float pX = pView.getX() + marginX;    //hitbox is center 80% of frog
+        float pY = pView.getY() + marginY;
+        float pWidth = pView.getWidth() - (2 * marginX);
+        float pHeight = pView.getHeight() - (2 * marginY);
+        floorHeight = screenHeight + pView.getHeight() + 1;
+
+        for (int i = 0; i < blockList.size(); i++) {
+            Block[] blockColumn = blockList.get(i);
+            for (int j = 0; j < blockColumn.length; j++) {
+
+                if (blockColumn[j] == null) {
+                    continue;
+                }
+
+                RelativeLayout layout = columnLayouts.get(i);
+                ImageView v = blockColumn[j].getView();
+
+                // skip entire column if (Block right < player left) OR (player right < block left)
+                if (layout.getX() + v.getWidth() < pX || pX + pWidth < layout.getX()) {
+                    break;        // if column more than a block away, skip it
+                }
+
+                // skip if air or if block top than player bottom
+                if (v.getDrawable() != null && pY + pHeight <= v.getY()
+                        && blockList.get(i)[j] != null && blockList.get(i)[j].getScaleVelocity()[1] != 0) {
+
+                    // if block height is higher than current highest block under player, update to block
+                    if (layout.getX() + v.getWidth() >= pView.getX() + 0.3*pView.getWidth()
+                            && pView.getX() + 0.7*pView.getWidth() >= layout.getX()) {
+
+                        if ((int) v.getY() < floorHeight) {
+                            floorHeight = (int)v.getY() - (int)(v.getHeight()*0.1f);
+                        }
+                    }
+                }
+            }
+        }
+        return pView.getY() + pView.getHeight() >= floorHeight;// if not touching anything, return false
+    }
 
     private void playerDied() {
         handler.removeCallbacks(playerRunnable);
@@ -567,12 +609,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if (!onGround()) {
+        if (!onGround() && !onMovingPlatform()) {
             return false;
         }
         double squareDist = Math.pow(event.getRawX() - (v.getX() + (float)v.getWidth()/2), 2)
                 + Math.pow(event.getRawY() - (v.getY() + (float)v.getHeight()/2), 2);
-        double angle = Math.atan2((event.getRawY() - (v.getY() + (float)v.getHeight()/2)) , (event.getRawX() - (v.getX() + (float)v.getWidth()/2)));
+        double angle = Math.atan2((event.getRawY() - (v.getY() + (float)v.getHeight()/2)),
+                (event.getRawX() - (v.getX() + (float)v.getWidth()/2)));
 
         switch (event.getAction()){
             case MotionEvent.ACTION_DOWN:
@@ -598,8 +641,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     dx = -1 * (float)(Math.cos(angle) * 1.5*blockW);
                     dy = -1 * (float)(Math.sin(angle) * 1.5*blockW);
                 }
-                vX = dx*0.12f;                           // x-velocity
-                vY = dy*0.22f;                           // y-velocity
+                vX = dx*0.10f;                           // x-velocity
+                vY = dy*0.20f;                           // y-velocity
 
                 break;
 
