@@ -44,6 +44,7 @@ public class BlockColumnGenerator {
                     v.setImageResource(R.drawable.brick2);
                     blockColumn[i] = new Block(name, width, height, new float[]{1.0f, 0}, v);
                     break;
+                case "move_brick_sync":
                 case "move_brick":
                     v.setImageResource(R.drawable.brick1);
                     // moving template: xScale, +/- num blocks to travel, time per half cycle, time variable, starting position

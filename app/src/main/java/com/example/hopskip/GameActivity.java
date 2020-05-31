@@ -287,6 +287,11 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 blockImg.setLayoutParams(params);
                 blockImg.setX((blockW - block.getWidth())/2);
                 blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
+                if (block.getType().contains("sync")) {
+                    // will sync moving platform with speed and location of moving platform DIRECTLY on left
+                    blockImg.setY(blockList.get(index-1)[y].getView().getY());
+                    block.setScaleVelocity(blockList.get(index-1)[y].getScaleVelocity());
+                }
                 layout.addView(blockImg);
             }
         }
@@ -297,8 +302,39 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     private String[][] getStructure(int idx) {
         String[][] structure;
         switch (idx) {
-            // basic heaven stairs
             case 1:
+                structure = new String[15][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[2] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
+                structure[3] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
+                structure[4] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
+                structure[5] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[6] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[7] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[8] = new String[]{"", "", "", "", "grass", "dirt"};
+                structure[9] = new String[]{"", "", "", "", "grass", "dirt"};
+                structure[10] = new String[]{"", "", "", "", "grass", "dirt"};
+                structure[11] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[12] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[13] = new String[]{"", "", "grass", "", "", "", "", "grass"};
+                structure[14] = new String[]{"", "coin", "grass", "", "", "", "", "grass"};
+                break;
+            case 2:
+                structure = new String[10][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
+                structure[1] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[2] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[3] = new String[]{"", "", "", "", "", "", "", "air"};
+                structure[4] = new String[]{"", "", "", "move_brick", "", "", "", ""};
+                structure[5] = new String[]{"", "", "", "move_brick_sync", "", "", "", ""};
+                structure[6] = new String[]{"", "", "", "", "", "", "", "air"};
+                structure[7] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[8] = new String[]{"", "", "", "", "", "grass", "dirt"};
+                structure[9] = new String[]{"", "", "", "", "", "", "", "grass"};
+                break;
+            // basic heaven stairs
+            case 3:
                 structure = new String[10][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
                 structure[1] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
@@ -312,7 +348,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[9] = new String[]{"", "", "", "", "grass", ""};
                 break;
             // basic float pyramid
-            case 2:
+            case 4:
                 structure = new String[10][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "grass", "", "", "grass"};
@@ -326,8 +362,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[9] = new String[]{"", "", "", "", "", "", "", "grass"};
                 break;
             // hopscotch tower
-            case 3:
-                structure = new String[9][NUM_BLOCKS_Y];
+            case 5:
+                structure = new String[10][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[2] = new String[]{"brick1", "brick2", "brick1", "brick2", "brick1", "", "", "grass"};
@@ -337,9 +373,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[7] = new String[]{"", "", "brick1", "", "", "", "brick1", "grass"};
                 structure[8] = new String[]{"brick1", "", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
+                structure[9] = new String[]{"", "", "", "", "", "", "", "grass"};
                 break;
             // mission:impossible
-            case 4:
+            case 6:
                 structure = new String[26][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "", "grass", "", "grass"};
@@ -348,7 +385,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[4] = new String[]{"", "", "", "grass", "", "", "", "grass"};
                 structure[5] = new String[]{"", "", "", "grass", "", "", "", "grass"};
                 structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
-                structure[7] = new String[]{"brick1", "", "brick2", "brick1", "brick2", "brick1", "brick2", "brick1"};
+                structure[7] = new String[]{"brick1", "", "", "brick1", "brick2", "brick1", "brick2", "brick1"};
                 structure[8] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
                 structure[9] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
                 structure[10] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
@@ -470,7 +507,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                     if (indexOfStructure == -1) {
                         Random rand = new Random();
-                        indexOfStructure = rand.nextInt(5);
+                        indexOfStructure = rand.nextInt(7);
                         columnIndex = 0;
                         currStruct = getStructure(indexOfStructure);
                         //System.out.println("New structure generated: index = " + indexOfStructure);
@@ -534,7 +571,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                                         || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)
                                         || (vY > 0 && pY + pHeight > v.getY() - v.getHeight()*0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
                         ) {
-                            //System.out.println("COIN NABBED");
                             v.setTag("collected");
                             layout.removeView(v);
                             for (int j = 0; j < blockList.get(i).length; j++) {

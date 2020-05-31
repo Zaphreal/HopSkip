@@ -6,7 +6,7 @@ public class Block {
     private final String type;
     private final float width, height;
     private final ImageView view;
-    private final float[] scaleVelocity;
+    private float[] scaleVelocity;
 
     Block(String type, float width, float height, float[] scaleVelocity, ImageView blockImg) {
         this.type = type;
@@ -32,5 +32,9 @@ public class Block {
 
     public float[] getScaleVelocity() {
         return scaleVelocity;
+    }
+
+    public void setScaleVelocity(float[] scaleVelocity) {
+        this.scaleVelocity = scaleVelocity;
     }
 }
