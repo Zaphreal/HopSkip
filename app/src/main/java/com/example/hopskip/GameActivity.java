@@ -512,14 +512,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         for (RelativeLayout layout : columnLayouts) {      // iterate through all column layouts
             for (int i = 0; i < layout.getChildCount(); i++) {
-
-                // skip entire column if (column right < player left) OR (player right < column left)
-                if (layout.getX() + layout.getWidth() < pX || pX + pWidth < layout.getX()) {
-                    continue;        // if column more than a block away, skip it
-                }
-
                 ImageView v = (ImageView)layout.getChildAt(i);
                 float viewX = (layout.getX() + ((float)layout.getWidth() - v.getWidth())/2);
+
+                // skip entire column if (column right < player left) OR (player right < column left)
+                if (viewX + v.getWidth() < pX || pX + pWidth < viewX) {
+                    continue;        // if column more than a block away, skip it
+                }
 
                 // skip image if the block is air
                 if (v.getDrawable() == null) {
@@ -528,16 +527,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 if (v.getTag() != null) {
                     if (v.getTag().equals("coin")) {
+                        // if player bottom lower than coin top AND player top higher than coin bottom
                         if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
                                     && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
                                         || (vX > 0 && pX + pWidth > (viewX - v.getWidth()*0.3) && pX + pWidth < viewX + v.getWidth() * 0.5)
-                                        || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)))
-                                || (pY + pHeight <= v.getY()
-                                    && viewX + v.getWidth()*1.3 >= pView.getX() + 0.3 * pView.getWidth()
-                                    && pView.getX() + 0.7 * pView.getWidth() >= viewX - v.getWidth()*0.3)) {
-//                            System.out.println((vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.5));
-//                            System.out.println((vX > 0 && pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.5));
-//                            System.out.println((vX < 0 && pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.5));
+                                        || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)
+                                        || (vY > 0 && pY + pHeight > v.getY() - v.getHeight()*0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
+                        ) {
+                            //System.out.println("COIN NABBED");
                             v.setTag("collected");
                             layout.removeView(v);
                             for (int j = 0; j < blockList.get(i).length; j++) {
@@ -620,13 +617,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                 if (v.getTag() != null) {
                     if (v.getTag().equals("coin")) {
+                        // if player bottom lower than coin top AND player top higher than coin bottom
                         if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
                                 && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
                                 || (vX > 0 && pX + pWidth > (viewX - v.getWidth()*0.3) && pX + pWidth < viewX + v.getWidth() * 0.5)
-                                || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)))
-                                || (pY + pHeight <= v.getY()
-                                && viewX + v.getWidth()*1.3 >= pView.getX() + 0.3 * pView.getWidth()
-                                && pView.getX() + 0.7 * pView.getWidth() >= viewX - v.getWidth()*0.3)) {
+                                || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)
+                                || (vY > 0 && pY + pHeight > v.getY() - v.getHeight()*0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
+                        ) {
 
                             v.setTag("collected");
                             layout.removeView(v);
