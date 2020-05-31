@@ -403,6 +403,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     vY = 0;
                 }
                 if ((onMovingPlatform() && vX != 0 && !userTouchingPlayer)) {
+                    //System.out.println("MOVING PLATFORM DETECTED");
                     vX = 0;
                 }
 
@@ -511,37 +512,44 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         for (RelativeLayout layout : columnLayouts) {      // iterate through all column layouts
             for (int i = 0; i < layout.getChildCount(); i++) {
-                ImageView v = (ImageView)layout.getChildAt(i);
-                float viewX = (layout.getX() + ((float)layout.getWidth() - v.getWidth())/2);
 
-                // skip entire column if (Block right < player left) OR (player right < block left)
-                if (viewX + v.getWidth() < pX || pX + pWidth < viewX) {
+                // skip entire column if (column right < player left) OR (player right < column left)
+                if (layout.getX() + layout.getWidth() < pX || pX + pWidth < layout.getX()) {
                     continue;        // if column more than a block away, skip it
                 }
+
+                ImageView v = (ImageView)layout.getChildAt(i);
+                float viewX = (layout.getX() + ((float)layout.getWidth() - v.getWidth())/2);
 
                 // skip image if the block is air
                 if (v.getDrawable() == null) {
                     continue;
                 }
 
-                if (v.getTag() != null && v.getTag().equals("coin")) {
-                    if (( (pY + pHeight > v.getY() && pY < v.getY() + v.getHeight()) &&
-                                ((vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.5)
-                                || (vX > 0 && pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.5)
-                                || (vX < 0 && pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.5)))
-                        || (pY + pHeight <= v.getY() &&
-                                viewX + v.getWidth() >= pView.getX() + 0.3*pView.getWidth() && pView.getX() + 0.7*pView.getWidth() >= viewX)) {
-                        System.out.println((vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.5));
-                        System.out.println((vX > 0 && pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.5));
-                        System.out.println((vX < 0 && pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.5));
-                        v.setTag("");
-                        layout.removeView(v);
-                        for (int j = 0; j < blockList.get(i).length; j++) {
-                            if (blockList.get(i)[j] != null && blockList.get(i)[j].getView().equals(v)) {
-                                blockList.get(i)[j] = null;
+                if (v.getTag() != null) {
+                    if (v.getTag().equals("coin")) {
+                        if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
+                                    && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
+                                        || (vX > 0 && pX + pWidth > (viewX - v.getWidth()*0.3) && pX + pWidth < viewX + v.getWidth() * 0.5)
+                                        || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)))
+                                || (pY + pHeight <= v.getY()
+                                    && viewX + v.getWidth()*1.3 >= pView.getX() + 0.3 * pView.getWidth()
+                                    && pView.getX() + 0.7 * pView.getWidth() >= viewX - v.getWidth()*0.3)) {
+//                            System.out.println((vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.5));
+//                            System.out.println((vX > 0 && pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.5));
+//                            System.out.println((vX < 0 && pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.5));
+                            v.setTag("collected");
+                            layout.removeView(v);
+                            for (int j = 0; j < blockList.get(i).length; j++) {
+                                if (blockList.get(i)[j] != null && blockList.get(i)[j].getView().equals(v)) {
+                                    blockList.get(i)[j] = null;
+                                }
                             }
+                            collectCoin();
                         }
-                        collectCoin();
+                        continue;
+                    }
+                    if (v.getTag().equals("collected")) {
                         continue;
                     }
                 }
@@ -565,23 +573,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     if (vX > 0 && pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3) {
                         pView.setX(viewX - pWidth);
                         hitWall();
-                        System.out.println("RIGHT WALL HIT: pRight = " + pX + pWidth + ", bLeft = " + viewX);
+                        //System.out.println("RIGHT WALL HIT: pRight = " + (pX + pWidth) + ", bLeft = " + viewX);
                     }
                     // else if (moving left and player left < block right within 30% of block)
                     else if (vX < 0 && pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
-                        if (v.getTag() != null && v.getTag().equals("coin")) {
-                            layout.removeView(v);
-                            for (int j = 0; j < blockList.get(i).length; j++) {
-                                if (blockList.get(i)[j] != null && blockList.get(i)[j].getView().equals(v)) {
-                                    blockList.get(i)[j] = null;
-                                }
-                            }
-                            collectCoin();
-                            continue;
-                        }
                         pView.setX(viewX + v.getWidth() - marginX);
                         hitWall();
-                        System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + viewX + v.getWidth());
+                        //System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + (viewX + v.getWidth()));
                     }
                 }
                 // if not wall or ceiling and if block height is higher than current highest block under player, update to block
@@ -620,6 +618,28 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     continue;        // if column more than a block away, skip it
                 }
 
+                if (v.getTag() != null) {
+                    if (v.getTag().equals("coin")) {
+                        if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
+                                && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
+                                || (vX > 0 && pX + pWidth > (viewX - v.getWidth()*0.3) && pX + pWidth < viewX + v.getWidth() * 0.5)
+                                || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)))
+                                || (pY + pHeight <= v.getY()
+                                && viewX + v.getWidth()*1.3 >= pView.getX() + 0.3 * pView.getWidth()
+                                && pView.getX() + 0.7 * pView.getWidth() >= viewX - v.getWidth()*0.3)) {
+
+                            v.setTag("collected");
+                            layout.removeView(v);
+                            blockList.get(i)[j] = null;
+                            collectCoin();
+                        }
+                        continue;
+                    }
+                    if (v.getTag().equals("collected")) {
+                        continue;
+                    }
+                }
+
                 // skip if air or if block top than player bottom
                 if (v.getDrawable() != null && pY + pHeight <= v.getY()
                         && blockList.get(i)[j] != null && blockList.get(i)[j].getScaleVelocity()[1] != 0) {
@@ -628,12 +648,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     if (viewX + v.getWidth() >= pView.getX() + 0.3*pView.getWidth() && pView.getX() + 0.7*pView.getWidth() >= viewX) {
 
                         if ((int) v.getY() < floorHeight) {
-                            if (v.getTag() != null && v.getTag().equals("coin")) {
-                                layout.removeView(v);
-                                blockList.get(i)[j] = null;
-                                collectCoin();
-                                continue;
-                            }
+//                            if (v.getTag() != null && v.getTag().equals("coin")) {
+//                                layout.removeView(v);
+//                                blockList.get(i)[j] = null;
+//                                collectCoin();
+//                                continue;
+//                            }
                             floorHeight = (int)v.getY() - (int)(v.getHeight()*0.1f);
                         }
                     }
