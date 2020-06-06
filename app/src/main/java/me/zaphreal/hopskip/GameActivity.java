@@ -236,7 +236,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         blockList.add(gen.generate(new String[]{"dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "grass", "dirt"}));
-        blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "wood_platform", "", "wood_platform", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "grass", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "grass", "", "", "grass"}));
@@ -290,6 +290,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     // will sync moving platform with speed and location of moving platform DIRECTLY on left
                     blockImg.setY(blockList.get(index-1)[y].getView().getY());
                     block.setScaleVelocity(blockList.get(index-1)[y].getScaleVelocity());
+                } else if (block.getType().contains("platform")) {
+                    blockImg.setY(y * blockH);
                 } else {
                     blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 }
@@ -592,6 +594,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 if (pY + pHeight > v.getY()) {
                     // if player top is lower than block bottom
                     if (pY >= v.getY() + v.getHeight()) {
+                        continue;
+                    }
+
+                    if (v.getTag() != null && v.getTag().equals("platform")) {
                         continue;
                     }
 

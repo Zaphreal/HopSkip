@@ -50,6 +50,11 @@ public class BlockColumnGenerator {
                     // moving template: xScale, +/- num blocks to travel, time per half cycle, time variable, starting position
                     blockColumn[i] = new Block(name, width, (height/2), new float[]{1.0f, 1.0f, 2.0f, 0, ((float)-Math.PI)/4}, v);
                     break;
+                case "wood_platform":
+                    v.setImageResource(R.drawable.wood);
+                    v.setTag("platform");
+                    blockColumn[i] = new Block(name, width, (height/4), new float[]{1.0f, 0}, v);
+                    break;
                 case "coin":
                     v.setImageResource(R.drawable.coin_frog);
                     v.setTag("coin");
