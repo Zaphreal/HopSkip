@@ -18,7 +18,6 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 import java.util.ArrayList;
 import java.util.Random;
@@ -100,10 +99,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         pView = findViewById(R.id.player);
         pView.setImageDrawable(getDrawable(R.drawable.frog));
         pView.setOnTouchListener(this);
-        ConstraintLayout.LayoutParams playerSizeParams = (ConstraintLayout.LayoutParams)pView.getLayoutParams();
+        //ConstraintLayout.LayoutParams playerSizeParams = (ConstraintLayout.LayoutParams)pView.getLayoutParams();
+        RelativeLayout.LayoutParams playerSizeParams = (RelativeLayout.LayoutParams)pView.getLayoutParams();
         playerSizeParams.width = (int)(blockW * 0.9);
         playerSizeParams.height = (int)(blockH * 0.9);
         pView.setLayoutParams(playerSizeParams);
+        pView.setTranslationZ(0.1f);
+        pView.setX((float)screenWidth * 0.5f);
+        pView.setY((float)screenHeight * 0.75f);
 
         scrollAccel = -0.2f;
         scrollSpeed = scrollAccel;
@@ -236,7 +239,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         blockList.add(gen.generate(new String[]{"dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "grass", "dirt"}));
-        blockList.add(gen.generate(new String[]{"", "", "wood_platform", "", "wood_platform", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "platform_wood", "bg_wood", "platform_wood", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "grass", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "grass", "", "", "grass"}));
@@ -286,14 +289,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
                 blockImg.setX((blockW - block.getWidth())/2);
+                blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 if (block.getType().contains("sync")) {
                     // will sync moving platform with speed and location of moving platform DIRECTLY on left
                     blockImg.setY(blockList.get(index-1)[y].getView().getY());
                     block.setScaleVelocity(blockList.get(index-1)[y].getScaleVelocity());
-                } else if (block.getType().contains("platform")) {
+                }
+                if (block.getType().contains("platform")) {
                     blockImg.setY(y * blockH);
-                } else {
-                    blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 }
                 layout.addView(blockImg);
             }
@@ -369,13 +372,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure = new String[10][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
-                structure[2] = new String[]{"brick1", "brick2", "brick1", "brick2", "brick1", "", "", "grass"};
-                structure[3] = new String[]{"coin", "brick2", "", "", "brick1", "", "", "grass"};
-                structure[4] = new String[]{"", "", "", "", "brick1", "", "", "grass"};
-                structure[5] = new String[]{"", "", "", "", "", "", "", "grass"};
-                structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
-                structure[7] = new String[]{"", "", "brick1", "", "", "", "brick1", "grass"};
-                structure[8] = new String[]{"brick1", "", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
+                structure[2] = new String[]{"brick1", "brick2", "brick1", "brick2", "brick1", "bg_wood", "bg_wood", "wood"};
+                structure[3] = new String[]{"coin", "brick2", "bg_wood", "bg_wood", "brick1", "bg_wood", "bg_wood", "wood"};
+                structure[4] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "brick1", "bg_wood", "bg_wood", "wood"};
+                structure[5] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood"};
+                structure[6] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood"};
+                structure[7] = new String[]{"bg_wood", "bg_wood", "brick1", "bg_wood", "bg_wood", "bg_wood", "brick1", "wood"};
+                structure[8] = new String[]{"brick1", "bg_wood", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
                 structure[9] = new String[]{"", "", "", "", "", "", "", "grass"};
                 break;
             // mission:impossible
@@ -566,7 +569,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 }
 
                 if (v.getTag() != null) {
-                    if (v.getTag().equals("coin")) {
+                    if (v.getTag().equals("background") || v.getTag().equals("collected")) {
+                        continue;
+                    } else if (v.getTag().equals("coin")) {
                         // if player bottom lower than coin top AND player top higher than coin bottom
                         if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
                                     && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
@@ -583,9 +588,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                             }
                             collectCoin();
                         }
-                        continue;
-                    }
-                    if (v.getTag().equals("collected")) {
                         continue;
                     }
                 }

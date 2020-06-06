@@ -1,6 +1,8 @@
 package me.zaphreal.hopskip;
 
 import android.content.Context;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.widget.ImageView;
 
 public class BlockColumnGenerator {
@@ -44,16 +46,26 @@ public class BlockColumnGenerator {
                     v.setImageResource(R.drawable.brick2);
                     blockColumn[i] = new Block(name, width, height, new float[]{1.0f, 0}, v);
                     break;
+                case "wood":
+                    v.setImageResource(R.drawable.wood);
+                    blockColumn[i] = new Block(name, width, height, new float[]{1.0f, 0}, v);
+                    break;
                 case "move_brick_sync":
                 case "move_brick":
                     v.setImageResource(R.drawable.brick1);
                     // moving template: xScale, +/- num blocks to travel, time per half cycle, time variable, starting position
                     blockColumn[i] = new Block(name, width, (height/2), new float[]{1.0f, 1.0f, 2.0f, 0, ((float)-Math.PI)/4}, v);
                     break;
-                case "wood_platform":
+                case "platform_wood":
                     v.setImageResource(R.drawable.wood);
                     v.setTag("platform");
                     blockColumn[i] = new Block(name, width, (height/4), new float[]{1.0f, 0}, v);
+                    break;
+                case "bg_wood":
+                    v.setImageResource(R.drawable.wood);
+                    v.setTag("background");
+                    v.setColorFilter(Color.argb(85, 0, 0, 0), PorterDuff.Mode.DARKEN);
+                    blockColumn[i] = new Block(name, width, height, new float[]{1.0f, 0}, v);
                     break;
                 case "coin":
                     v.setImageResource(R.drawable.coin_frog);
