@@ -1,4 +1,4 @@
-package com.example.hopskip;
+package me.zaphreal.hopskip;
 
 import android.widget.ImageView;
 

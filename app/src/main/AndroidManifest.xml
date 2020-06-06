@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.example.hopskip">
+          package="me.zaphreal.hopskip">
 
     <application
             android:allowBackup="true"
@@ -11,16 +11,16 @@
             android:supportsRtl="true"
             android:theme="@style/Theme.AppCompat.Light.NoActionBar.FullScreen">
         <activity
-                android:name=".ResultsActivity"
+                android:name="me.zaphreal.hopskip.ResultsActivity"
                 android:screenOrientation="sensorLandscape">
         </activity>
         <!-- android:theme="@android:style/Theme.Holo.Light.NoActionBar.Fullscreen"> -->
         <activity
-                android:name=".GameActivity"
+                android:name="me.zaphreal.hopskip.GameActivity"
                 android:screenOrientation="sensorLandscape">
         </activity>
         <activity
-                android:name=".MainActivity"
+                android:name="me.zaphreal.hopskip.MainActivity"
                 android:screenOrientation="sensorLandscape">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>

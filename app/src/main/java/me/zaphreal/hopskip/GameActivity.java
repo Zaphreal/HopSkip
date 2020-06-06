@@ -1,4 +1,4 @@
-package com.example.hopskip;
+package me.zaphreal.hopskip;
 
 import android.animation.Animator;
 import android.animation.AnimatorSet;
@@ -286,11 +286,12 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         new RelativeLayout.LayoutParams((int) block.getWidth() + 1, (int) block.getHeight());
                 blockImg.setLayoutParams(params);
                 blockImg.setX((blockW - block.getWidth())/2);
-                blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 if (block.getType().contains("sync")) {
                     // will sync moving platform with speed and location of moving platform DIRECTLY on left
                     blockImg.setY(blockList.get(index-1)[y].getView().getY());
                     block.setScaleVelocity(blockList.get(index-1)[y].getScaleVelocity());
+                } else {
+                    blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
                 }
                 layout.addView(blockImg);
             }

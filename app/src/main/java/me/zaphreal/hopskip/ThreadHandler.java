@@ -1,4 +1,4 @@
-package com.example.hopskip;
+package me.zaphreal.hopskip;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
