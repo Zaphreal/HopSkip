@@ -20,6 +20,7 @@ import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Random;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
@@ -40,6 +41,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
+    ArrayList<Entity> entityList = new ArrayList<>();
     ArrayList<RelativeLayout> columnLayouts = new ArrayList<>();
     String[][] currStruct;
     int indexOfStructure = -1, columnIndex = 0;
@@ -86,6 +88,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         ImageView pauseButton = findViewById(R.id.pause_button);
         pauseButton.setOnTouchListener(new View.OnTouchListener() {
+            @SuppressLint("ClickableViewAccessibility")
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -177,6 +180,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             resumeButton.setX(((float) screenWidth / 2) - ((((7f / 9) * menuHeight) / 1.5f) / 2f));
             resumeButton.setY(((float) screenHeight / 2) - (menuHeight / 2) + ((5f / 18) * menuHeight));
             resumeButton.setOnTouchListener(new View.OnTouchListener() {
+                @SuppressLint("ClickableViewAccessibility")
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -196,6 +200,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             restartButton.setX(((float) screenWidth / 2) - ((((7f / 9) * menuHeight) / 1.5f) / 2f));
             restartButton.setY(((float) screenHeight / 2) - (menuHeight / 2) + ((14f / 27) * menuHeight));
             restartButton.setOnTouchListener(new View.OnTouchListener() {
+                @SuppressLint("ClickableViewAccessibility")
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -215,6 +220,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             quitButton.setX(((float) screenWidth / 2) - ((((7f / 9) * menuHeight) / 1.5f) / 2f));
             quitButton.setY(((float) screenHeight / 2) - (menuHeight / 2) + ((41f / 54) * menuHeight));
             quitButton.setOnTouchListener(new View.OnTouchListener() {
+                @SuppressLint("ClickableViewAccessibility")
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
@@ -239,16 +245,16 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         blockList.add(gen.generate(new String[]{"dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "grass", "dirt"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "grass", "dirt"}));
-        blockList.add(gen.generate(new String[]{"", "", "platform_wood", "bg_wood", "platform_wood", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "grass", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "grass", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "grass", "", "", "grass"}));
-        blockList.add(gen.generate(new String[]{"", "", "", "coin", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
-        blockList.add(gen.generate(new String[]{"", "coin", "grass", "", "", "", "", "grass"}));
-        blockList.add(gen.generate(new String[]{"", "", "move_brick", "", "", "", "", "grass"}));
-        blockList.add(gen.generate(new String[]{"", "coin", "", "", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "grass", "", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
+        blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         blockList.add(gen.generate(new String[]{"", "", "", "", "", "", "", "grass"}));
         for (int x = 0; x < NUM_BLOCKS_X + 2; x++) {
             generateBlockColumn(x);
@@ -290,19 +296,33 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 blockImg.setLayoutParams(params);
                 blockImg.setX((blockW - block.getWidth())/2);
                 blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
-                if (block.getType().contains("sync")) {
-                    // will sync moving platform with speed and location of moving platform DIRECTLY on left
-                    blockImg.setY(blockList.get(index-1)[y].getView().getY());
-                    block.setScaleVelocity(blockList.get(index-1)[y].getScaleVelocity());
-                }
-                if (block.getType().contains("platform")) {
-                    blockImg.setY(y * blockH);
-                }
+
                 layout.addView(blockImg);
             }
         }
         rl.addView(layout);
         columnLayouts.add(layout);
+    }
+
+    private void generateEntity(Entity entity) {
+        ImageView v = entity.getView();
+
+        RelativeLayout.LayoutParams params =
+                new RelativeLayout.LayoutParams((int) entity.getWidth() + 1, (int) entity.getHeight());
+        v.setLayoutParams(params);
+        v.setX(columnLayouts.get(columnLayouts.size() - 1).getX() + ((blockW - entity.getWidth())/2) + (blockW * entity.getxOffset()));
+        v.setY(((blockH - entity.getHeight())/2) + (blockH * entity.getyOffset()));
+        if (entity.getType().contains("sync")) {
+            // will sync moving platform with speed and location of moving platform DIRECTLY on left
+
+            v.setY(entityList.get(entityList.indexOf(entity) - 1).getView().getY());
+            entity.setScaleVelocity(entityList.get(entityList.indexOf(entity) - 1).getScaleVelocity());
+        }
+        if (entity.getType().contains("platform")) {
+            v.setY(blockH * entity.getyOffset());
+        }
+        rl.addView(v);
+        entity.onScreen = true;
     }
 
     private String[][] getStructure(int idx) {
@@ -324,7 +344,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[11] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[12] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[13] = new String[]{"", "", "grass", "", "", "", "", "grass"};
-                structure[14] = new String[]{"", "coin", "grass", "", "", "", "", "grass"};
+                entityList.add(new Entity(this, "coin", 13, blockW, blockH, 0.5f, 1));
+                structure[14] = new String[]{"", "", "grass", "", "", "", "", "grass"};
                 break;
             case 2:
                 structure = new String[10][NUM_BLOCKS_Y];
@@ -332,8 +353,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[1] = new String[]{"", "", "", "", "", "grass", "dirt"};
                 structure[2] = new String[]{"", "", "", "", "", "grass", "dirt"};
                 structure[3] = new String[]{"", "", "", "", "", "", "", "air"};
-                structure[4] = new String[]{"", "", "", "move_brick", "", "", "", ""};
-                structure[5] = new String[]{"", "", "", "move_brick_sync", "", "", "", ""};
+                structure[4] = new String[]{"", "", "", "", "", "", "", "air"};
+                entityList.add(new Entity(this, "move_brick", 4, blockW, blockH, 0, 3));
+                structure[5] = new String[]{"", "", "", "", "", "", "", "air"};
+                entityList.add(new Entity(this, "move_brick_sync", 5, blockW, blockH, 0, 3));
                 structure[6] = new String[]{"", "", "", "", "", "", "", "air"};
                 structure[7] = new String[]{"", "", "", "", "", "grass", "dirt"};
                 structure[8] = new String[]{"", "", "", "", "", "grass", "dirt"};
@@ -361,6 +384,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[2] = new String[]{"", "", "", "", "grass", "", "", "grass"};
                 structure[3] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[4] = new String[]{"", "", "grass", "", "", "", "", "grass"};
+                entityList.add(new Entity(this, "coin", 4, blockW, blockH, 0.5f, 1));
                 structure[5] = new String[]{"", "", "grass", "", "", "", "", "grass"};
                 structure[6] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[7] = new String[]{"", "", "", "", "grass", "", "", "grass"};
@@ -373,11 +397,16 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[0] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[1] = new String[]{"", "", "", "", "", "", "", "grass"};
                 structure[2] = new String[]{"brick1", "brick2", "brick1", "brick2", "brick1", "bg_wood", "bg_wood", "wood"};
-                structure[3] = new String[]{"coin", "brick2", "bg_wood", "bg_wood", "brick1", "bg_wood", "bg_wood", "wood"};
-                structure[4] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "brick1", "bg_wood", "bg_wood", "wood"};
+                structure[3] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood"};
+                entityList.add(new Entity(this, "coin", 3, blockW, blockH, 0, 0));
+                entityList.add(new Entity(this, "platform_wood", 3, blockW, blockH, 0,1));
+                entityList.add(new Entity(this, "platform_wood", 3, blockW, blockH, 0, 4));
+                structure[4] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood"};
+                entityList.add(new Entity(this, "platform_wood", 4, blockW, blockH, 0, 4));
                 structure[5] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood"};
                 structure[6] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood"};
-                structure[7] = new String[]{"bg_wood", "bg_wood", "brick1", "bg_wood", "bg_wood", "bg_wood", "brick1", "wood"};
+                structure[7] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "brick1", "wood"};
+                entityList.add(new Entity(this, "platform_wood", 7, blockW, blockH, 0, 2));
                 structure[8] = new String[]{"brick1", "bg_wood", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
                 structure[9] = new String[]{"", "", "", "", "", "", "", "grass"};
                 break;
@@ -396,14 +425,19 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 structure[9] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
                 structure[10] = new String[]{"brick1", "", "", "", "", "", "", "brick1"};
                 structure[11] = new String[]{"brick1", "brick2", "", "", "", "", "", "brick1"};
-                structure[12] = new String[]{"brick1", "brick2", "", "", "", "move_brick", "", ""};
-                structure[13] = new String[]{"brick1", "brick2", "", "", "", "move_brick", "", ""};
+                structure[12] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                entityList.add(new Entity(this, "move_brick", 12, blockW, blockH, 0, 5));
+                structure[13] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                entityList.add(new Entity(this, "move_brick_sync", 13, blockW, blockH, 0, 5));
                 structure[14] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[15] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[16] = new String[]{"brick1", "brick2", "", "", "move_brick", "", "", ""};
+                structure[16] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                entityList.add(new Entity(this, "move_brick", 16, blockW, blockH, 0, 4));
                 structure[17] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[18] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[19] = new String[]{"brick1", "brick2", "", "", "", "move_brick", "", ""};
+                structure[19] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
+                entityList.add(new Entity(this, "move_brick", 19, blockW, blockH, 0, 5));
+
                 structure[20] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[21] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
                 structure[22] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
@@ -477,14 +511,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         distanceScore += vX / 10;
                     }
                 }
-                String text = "";
+                StringBuilder text = new StringBuilder();
                 for (int i = 0; i < 4 - String.valueOf((int)distanceScore).length(); i++) {
-                    text += "0";
+                    text.append("0");
                 }
-                text += String.valueOf((int)distanceScore);
-                distanceScoreView.setText(text);
+                text.append((int) distanceScore);
+                distanceScoreView.setText(text.toString());
 
-                // DIVIDER
+                // ANIMATE BLOCKS
                 for (int i = columnLayouts.size() - 1; i >= 0; i--) {
                     RelativeLayout layout = columnLayouts.get(i);
                     ObjectAnimator anim = ObjectAnimator.ofFloat(layout, "X", layout.getX() + scrollSpeed);
@@ -500,6 +534,28 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         }
                     }
                 }
+
+                // ANIMATE ENTITIES
+                for (Entity e : entityList) {
+                    if (!e.onScreen) {
+                        break;
+                    }
+
+                    ImageView v = e.getView();
+                    ObjectAnimator anim = ObjectAnimator.ofFloat(v, "X", v.getX() + scrollSpeed);
+                    animList.add(anim);
+
+                    if (e.getScaleVelocity()[1] != 0) {
+                        e.getScaleVelocity()[3] += (float)1/blockH;
+                        e.getScaleVelocity()[4] = (float)((-e.getScaleVelocity()[1]
+                                * (Math.PI/2))
+                                * Math.cos((Math.PI/e.getScaleVelocity()[2])
+                                * e.getScaleVelocity()[3]));
+                        anim = ObjectAnimator.ofFloat(v, "Y", v.getY() + e.getScaleVelocity()[4]);
+                        animList.add(anim);
+                    }
+                }
+
                 AnimatorSet animSet = new AnimatorSet();
                 animSet.playTogether(animList);
                 animSet.setInterpolator(new LinearInterpolator());
@@ -511,6 +567,17 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     rl.removeView(columnLayouts.get(0));
                     columnLayouts.remove(0);
 
+                    Iterator<Entity> itr = entityList.iterator();
+                    while (itr.hasNext()) {
+                        Entity e = itr.next();
+                        if (e.getView().getX() <= -2 * blockW) {
+                            rl.removeView(e.getView());
+                            itr.remove();
+                        } else {
+                            break;
+                        }
+                    }
+
                     if (indexOfStructure == -1) {
                         Random rand = new Random();
                         indexOfStructure = rand.nextInt(7);
@@ -519,8 +586,15 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         //System.out.println("New structure generated: index = " + indexOfStructure);
                     }
                     blockList.add(gen.generate(currStruct[columnIndex]));
-                    columnIndex++;
                     appendBlockColumn();
+
+                    for (Entity e : entityList) {
+                        if (e.getColumnIdx() == columnIndex && !e.onScreen) {
+                            generateEntity(e);
+                        }
+                    }
+
+                    columnIndex++;
 
                     if (columnIndex == currStruct.length) {
                         indexOfStructure = -1;
@@ -558,36 +632,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 ImageView v = (ImageView)layout.getChildAt(i);
                 float viewX = (layout.getX() + ((float)layout.getWidth() - v.getWidth())/2);
 
-                // skip entire column if (column right < player left) OR (player right < column left)
-                if (viewX + v.getWidth() < pX || pX + pWidth < viewX) {
+                // skip entire column if (column right < player left) OR (player right < column left) OR the block is air
+                if (viewX + v.getWidth() < pX || pX + pWidth < viewX || v.getDrawable() == null) {
                     continue;        // if column more than a block away, skip it
                 }
 
-                // skip image if the block is air
-                if (v.getDrawable() == null) {
-                    continue;
-                }
-
                 if (v.getTag() != null) {
-                    if (v.getTag().equals("background") || v.getTag().equals("collected")) {
-                        continue;
-                    } else if (v.getTag().equals("coin")) {
-                        // if player bottom lower than coin top AND player top higher than coin bottom
-                        if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
-                                    && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
-                                        || (vX > 0 && pX + pWidth > (viewX - v.getWidth()*0.3) && pX + pWidth < viewX + v.getWidth() * 0.5)
-                                        || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)
-                                        || (vY > 0 && pY + pHeight > v.getY() - v.getHeight()*0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
-                        ) {
-                            v.setTag("collected");
-                            layout.removeView(v);
-                            for (int j = 0; j < blockList.get(i).length; j++) {
-                                if (blockList.get(i)[j] != null && blockList.get(i)[j].getView().equals(v)) {
-                                    blockList.get(i)[j] = null;
-                                }
-                            }
-                            collectCoin();
-                        }
+                    if (v.getTag().equals("background")) {
                         continue;
                     }
                 }
@@ -596,10 +647,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 if (pY + pHeight > v.getY()) {
                     // if player top is lower than block bottom
                     if (pY >= v.getY() + v.getHeight()) {
-                        continue;
-                    }
-
-                    if (v.getTag() != null && v.getTag().equals("platform")) {
                         continue;
                     }
 
@@ -632,6 +679,78 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 }
             }
         }
+
+        Iterator<Entity> itr = entityList.iterator();
+        while (itr.hasNext()){
+            Entity e = itr.next();
+            if (!e.onScreen) {
+                break;
+            }
+            ImageView v = e.getView();
+
+            if (v.getX() + v.getWidth() < pX || pX + pWidth < v.getX()) {
+                continue;        // if column more than a block away, skip it
+            }
+            if (v.getTag() != null) {
+                if (v.getTag().equals("collected")) {
+                    continue;
+                } else if (v.getTag().equals("coin")) {
+                    // if player bottom lower than coin top AND player top higher than coin bottom
+                    if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
+                            && ((vY <= 0 && pY < v.getY() + v.getHeight() * 1.3 && pY > v.getY() + v.getHeight() * 0.5)
+                            || (vX > 0 && pX + pWidth > (v.getX() - v.getWidth() * 0.3) && pX + pWidth < v.getX() + v.getWidth() * 0.5)
+                            || (vX < 0 && pX < v.getX() + v.getWidth() * 1.3 && pX > v.getX() + v.getWidth() * 0.5)
+                            || (vY > 0 && pY + pHeight > v.getY() - v.getHeight() * 0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
+                    ) {
+                        v.setTag("collected");
+                        rl.removeView(v);
+                        itr.remove();
+                        collectCoin();
+                    }
+                    continue;
+                }
+            }
+
+            //if player bottom is "lower" than block top, it is a potential wall and cannot be floor
+            if (pY + pHeight > v.getY()) {
+                // if player top is lower than block bottom
+                if (pY >= v.getY() + v.getHeight()) {
+                    continue;
+                }
+
+                if (v.getTag() != null && v.getTag().equals("platform")) {
+                    continue;
+                }
+
+                // if moving up and player top is within bottom 30% of block
+                if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.7) {
+                    //System.out.println("CEILING HIT: pY = " + pY + ", bBottom = " + v.getY() + v.getHeight());
+
+                    pView.setY(v.getY() + v.getHeight() - marginY);
+                    hitCeiling();
+                    continue;
+                }
+                // if (moving right AND player right > block left within left 30% of block)
+                if (vX > 0 && pX + pWidth > v.getX() && pX + pWidth < v.getX() + v.getWidth() * 0.3) {
+                    pView.setX(v.getX() - pWidth);
+                    hitWall();
+                    //System.out.println("RIGHT WALL HIT: pRight = " + (pX + pWidth) + ", bLeft = " + viewX);
+                }
+                // else if (moving left and player left < block right within 30% of block)
+                else if (vX < 0 && pX < v.getX() + v.getWidth() && pX > v.getX() + v.getWidth() * 0.7) {
+                    pView.setX(v.getX() + v.getWidth() - marginX);
+                    hitWall();
+                    //System.out.println("LEFT WALL HIT: pLeft = " + pX + ", bRight = " + (viewX + v.getWidth()));
+                }
+            }
+            // if not wall or ceiling and if block height is higher than current highest block under player, update to block
+            else if (v.getX() + v.getWidth() >= pView.getX() + 0.3*pView.getWidth() && pView.getX() + 0.7*pView.getWidth() >= v.getX()) {
+                if ((int) v.getY() < floorHeight) {
+                    floorHeight = (int) v.getY();
+                }
+            }
+        }
+
         return pView.getY() + pView.getHeight() >= floorHeight;// if not touching anything, return false
     }
 
@@ -644,64 +763,50 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         float pHeight = pView.getHeight() - (2 * marginY);
         floorHeight = screenHeight + pView.getHeight() + 1;
 
-        for (int i = 0; i < blockList.size(); i++) {
-            for (int j = 0; j < blockList.get(i).length; j++) {
+        Iterator<Entity> itr = entityList.iterator();
+        while (itr.hasNext()){
+            Entity e = itr.next();
+            if (!e.onScreen) {
+                break;
+            }
+            ImageView v = e.getView();
 
-                if (blockList.get(i)[j] == null) {
+            if (v.getX() + v.getWidth() < pX || pX + pWidth < v.getX()) {
+                continue;        // if column more than a block away, skip it
+            }
+            if (v.getTag() != null) {
+                if (v.getTag().equals("collected")) {
+                    continue;
+                } else if (v.getTag().equals("coin")) {
+                    // if player bottom lower than coin top AND player top higher than coin bottom
+                    if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
+                            && ((vY <= 0 && pY < v.getY() + v.getHeight() * 1.3 && pY > v.getY() + v.getHeight() * 0.5)
+                            || (vX > 0 && pX + pWidth > (v.getX() - v.getWidth() * 0.3) && pX + pWidth < v.getX() + v.getWidth() * 0.5)
+                            || (vX < 0 && pX < v.getX() + v.getWidth() * 1.3 && pX > v.getX() + v.getWidth() * 0.5)
+                            || (vY > 0 && pY + pHeight > v.getY() - v.getHeight() * 0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
+                    ) {
+                        v.setTag("collected");
+                        rl.removeView(v);
+                        itr.remove();
+                        collectCoin();
+                    }
                     continue;
                 }
+            }
 
-                RelativeLayout layout = columnLayouts.get(i);
-                ImageView v = blockList.get(i)[j].getView();
-                float viewX = (layout.getX() + ((float)layout.getWidth() - v.getWidth())/2);
+            if (pY + pHeight <= v.getY() && e.getScaleVelocity()[1] != 0) {
 
-                // skip entire column if (Block right < player left) OR (player right < block left)
-                if (viewX + v.getWidth() < pX || pX + pWidth < viewX) {
-                    continue;        // if column more than a block away, skip it
-                }
+                // if block height is higher than current highest block under player, update to block
+                if (v.getX() + v.getWidth() >= pView.getX() + 0.3*pView.getWidth() && pView.getX() + 0.7*pView.getWidth() >= v.getX()) {
 
-                if (v.getTag() != null) {
-                    if (v.getTag().equals("coin")) {
-                        // if player bottom lower than coin top AND player top higher than coin bottom
-                        if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
-                                && ((vY <= 0 && pY < v.getY() + v.getHeight()*1.3 && pY > v.getY() + v.getHeight() * 0.5)
-                                || (vX > 0 && pX + pWidth > (viewX - v.getWidth()*0.3) && pX + pWidth < viewX + v.getWidth() * 0.5)
-                                || (vX < 0 && pX < viewX + v.getWidth()*1.3 && pX > viewX + v.getWidth() * 0.5)
-                                || (vY > 0 && pY + pHeight > v.getY() - v.getHeight()*0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
-                        ) {
-
-                            v.setTag("collected");
-                            layout.removeView(v);
-                            blockList.get(i)[j] = null;
-                            collectCoin();
-                        }
-                        continue;
-                    }
-                    if (v.getTag().equals("collected")) {
-                        continue;
-                    }
-                }
-
-                // skip if air or if block top than player bottom
-                if (v.getDrawable() != null && pY + pHeight <= v.getY()
-                        && blockList.get(i)[j] != null && blockList.get(i)[j].getScaleVelocity()[1] != 0) {
-
-                    // if block height is higher than current highest block under player, update to block
-                    if (viewX + v.getWidth() >= pView.getX() + 0.3*pView.getWidth() && pView.getX() + 0.7*pView.getWidth() >= viewX) {
-
-                        if ((int) v.getY() < floorHeight) {
-//                            if (v.getTag() != null && v.getTag().equals("coin")) {
-//                                layout.removeView(v);
-//                                blockList.get(i)[j] = null;
-//                                collectCoin();
-//                                continue;
-//                            }
-                            floorHeight = (int)v.getY() - (int)(v.getHeight()*0.1f);
-                        }
+                    if ((int) v.getY() < floorHeight) {
+                        floorHeight = (int)v.getY() - (int)(v.getHeight()*0.1f);
                     }
                 }
             }
+
         }
+
         return pView.getY() + pView.getHeight() >= floorHeight;// if not touching anything, return false
     }
 
@@ -762,7 +867,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     dx = -1 * (float)(Math.cos(angle) * 1.5*blockW);
                     dy = -1 * (float)(Math.sin(angle) * 1.5*blockW);
                 }
-                vX = dx*0.10f;                           // x-velocity
+                vX = dx*0.15f;                           // x-velocity
                 vY = dy*0.20f;                           // y-velocity
                 handler.postDelayed(new Runnable() {
                     @Override

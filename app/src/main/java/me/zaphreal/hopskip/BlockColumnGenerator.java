@@ -50,27 +50,11 @@ public class BlockColumnGenerator {
                     v.setImageResource(R.drawable.wood);
                     blockColumn[i] = new Block(name, width, height, new float[]{1.0f, 0}, v);
                     break;
-                case "move_brick_sync":
-                case "move_brick":
-                    v.setImageResource(R.drawable.brick1);
-                    // moving template: xScale, +/- num blocks to travel, time per half cycle, time variable, starting position
-                    blockColumn[i] = new Block(name, width, (height/2), new float[]{1.0f, 1.0f, 2.0f, 0, ((float)-Math.PI)/4}, v);
-                    break;
-                case "platform_wood":
-                    v.setImageResource(R.drawable.wood);
-                    v.setTag("platform");
-                    blockColumn[i] = new Block(name, width, (height/4), new float[]{1.0f, 0}, v);
-                    break;
                 case "bg_wood":
                     v.setImageResource(R.drawable.wood);
                     v.setTag("background");
                     v.setColorFilter(Color.argb(85, 0, 0, 0), PorterDuff.Mode.DARKEN);
                     blockColumn[i] = new Block(name, width, height, new float[]{1.0f, 0}, v);
-                    break;
-                case "coin":
-                    v.setImageResource(R.drawable.coin_frog);
-                    v.setTag("coin");
-                    blockColumn[i] = new Block(name, width/3, height/3, new float[]{1.0f, 0.2f, 0.5f, 0, 0}, v);
                     break;
                 case "air":
                     // creates an ImageView with a null image resource, will be ignored by player
