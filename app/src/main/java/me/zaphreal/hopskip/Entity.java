@@ -38,7 +38,14 @@ public class Entity {
                 break;
             case "coin":
             default:
-                view.setImageResource(R.drawable.coin_frog);
+                if (MainActivity.player.getDrawableID() == R.drawable.frog) {
+                    view.setImageResource(R.drawable.coin_frog);
+                } else if (MainActivity.player.getDrawableID() == R.drawable.bunny){
+                    view.setImageResource(R.drawable.coin_bunny);
+                } else {
+                    // intentionally distracting resourse to indicate something was not handled in future
+                    view.setImageResource(R.drawable.old_bunny);
+                }
                 view.setTag("coin");
                 width = blockW/3;
                 height = blockH/3;

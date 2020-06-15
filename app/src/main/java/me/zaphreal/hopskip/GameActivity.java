@@ -99,8 +99,13 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             }
         });
 
+        ImageView coinIcon = findViewById(R.id.coin_icon);
+        if (MainActivity.player.getDrawableID() == R.drawable.bunny){
+            coinIcon.setImageResource(R.drawable.coin_bunny);
+        }
+
         pView = findViewById(R.id.player);
-        pView.setImageDrawable(getDrawable(R.drawable.frog));
+        pView.setImageResource(MainActivity.player.getDrawableID());
         pView.setOnTouchListener(this);
         //ConstraintLayout.LayoutParams playerSizeParams = (ConstraintLayout.LayoutParams)pView.getLayoutParams();
         RelativeLayout.LayoutParams playerSizeParams = (RelativeLayout.LayoutParams)pView.getLayoutParams();
@@ -154,6 +159,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(screenWidth, screenHeight);
             pauseLayout.setLayoutParams(params);
             pauseLayout.setId(90000000);
+            pauseLayout.setTranslationZ(2f);
             rl.addView(pauseLayout);
 
             ImageView filter = new ImageView(this);
@@ -821,6 +827,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
         final Intent intent = new Intent(this, ResultsActivity.class);
         intent.putExtra("score", distanceScoreView.getText());
+
+        MainActivity.player.modifyBalanceBy(coinsCollected);
 
         handler.postDelayed(new Runnable() {
             @Override
