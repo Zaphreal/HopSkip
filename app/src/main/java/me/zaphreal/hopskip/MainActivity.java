@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
     public static Player player;
     private RelativeLayout panel1, panel2, panel3, panel4;
     private int shopPage = 1;
-    int numPages = 2;
+        int numPages = 2;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

@@ -5,6 +5,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.DisplayMetrics;
@@ -19,9 +20,7 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Random;
+import java.util.*;
 
 public class GameActivity extends AppCompatActivity implements View.OnTouchListener {
 
@@ -31,13 +30,17 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     public static final int NUM_BLOCKS_Y = 10; // CHANGE BACK TO 8
 
     Handler handler = new Handler();
-    Runnable playerRunnable, indicatorRunnable;
+    Runnable playerRunnable, bgRunnable;
     float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
     int screenHeight, screenWidth, floorHeight;
     long gameTimeInMilliseconds = 0;
     float distanceScore = 0, backtrack = 0;
     int coinsCollected = 0;
     boolean gamePaused = false, userTouchingPlayer = false;
+
+    int color = 180, colorCheckpoint = 0;
+    long cloudSpawnTime = 3000;
+    HashMap<ImageView, Float> cloudSpeedMap = new HashMap<>();
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
@@ -120,6 +123,75 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         scrollAccel = -0.2f;
         scrollSpeed = scrollAccel;
         handlePhysics();
+        handleBackground();
+    }
+
+
+    public void handleBackground() {
+        final RelativeLayout background = findViewById(R.id.background);
+        background.setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
+        handler.postDelayed(bgRunnable = new Runnable() {
+            public void run() {
+                if (distanceScore >= colorCheckpoint + 50) {
+                    colorCheckpoint += 50;
+                    if (color == 0) {
+                        color = 359;
+                    } else {
+                        color--;
+                    }
+                    background.setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
+                }
+                if (gameTimeInMilliseconds >= cloudSpawnTime) {
+                    ImageView cloud = generateCloud();
+                    System.out.println(cloud);
+                    cloudSpeedMap.put(cloud, (float) (scrollSpeed * (1.25 + (Math.random()/2))));
+                    cloudSpawnTime += 20000 * (Math.random() + 0.75f);
+                    background.addView(cloud);
+                }
+
+                ArrayList<Animator> animList = new ArrayList<>();
+                Stack<ImageView> purgeStack = new Stack<>();
+                for (int i = 0; i < background.getChildCount(); i++) {
+                    ImageView view = (ImageView) background.getChildAt(i);
+
+                    if (view.getX() + view.getWidth() <= 0) {
+                        purgeStack.push(view);
+                    } else {
+                        ObjectAnimator anim = ObjectAnimator.ofFloat(view, "X", view.getX() + cloudSpeedMap.get(view));
+                        animList.add(anim);
+                    }
+                }
+
+                while (!purgeStack.empty()) {
+                    ImageView v = purgeStack.pop();
+                    cloudSpeedMap.remove(v);
+                    background.removeView(v);
+                }
+
+                AnimatorSet animSet = new AnimatorSet();
+                animSet.playTogether(animList);
+                animSet.setInterpolator(new LinearInterpolator());
+                animSet.setDuration(0);
+                animSet.start();
+
+                handler.postDelayed(bgRunnable, DELAY);
+            }
+        }, DELAY);
+    }
+
+    public ImageView generateCloud() {
+        ImageView cloud = new ImageView(this);
+        int[] cloudDrawables = new int[]{R.drawable.cloud1, R.drawable.cloud2, R.drawable.cloud3, R.drawable.cloud4, R.drawable.cloud5};
+        cloud.setImageResource(cloudDrawables[(new Random()).nextInt(cloudDrawables.length)]);
+        cloud.setX(screenWidth);
+        cloud.setY((float) (screenHeight * Math.random() * 0.75f));
+        ViewGroup.LayoutParams params = new ViewGroup.LayoutParams(
+                (int) (screenWidth * (0.25 + ((Math.random() - 0.5)/4))),
+                (int) (screenHeight * (0.25 + ((Math.random() - 0.5)/4))));
+        cloud.setLayoutParams(params);
+        cloud.setScaleType(ImageView.ScaleType.FIT_CENTER);
+        System.out.println(params.width + ", " + params.height);
+        return cloud;
     }
 
     // If onPause() is not included the threads will double up when you
@@ -547,7 +619,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 // ANIMATE ENTITIES
                 for (Entity e : entityList) {
                     if (!e.onScreen) {
-                        break;
+                        continue;
                     }
 
                     ImageView v = e.getView();
@@ -707,9 +779,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     // if player bottom lower than coin top AND player top higher than coin bottom
                     if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
                             && ((vY <= 0 && pY < v.getY() + v.getHeight() * 1.3 && pY > v.getY() + v.getHeight() * 0.5)
-                            || (vX > 0 && pX + pWidth > (v.getX() - v.getWidth() * 0.3) && pX + pWidth < v.getX() + v.getWidth() * 0.5)
-                            || (vX < 0 && pX < v.getX() + v.getWidth() * 1.3 && pX > v.getX() + v.getWidth() * 0.5)
-                            || (vY > 0 && pY + pHeight > v.getY() - v.getHeight() * 0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
+                            || (vX >= 0 && pX + pWidth > (v.getX() - v.getWidth() * 0.3) && pX + pWidth < v.getX() + v.getWidth() * 0.5)
+                            || (vX <= 0 && pX < v.getX() + v.getWidth() * 1.3 && pX > v.getX() + v.getWidth() * 0.5)
+                            || (vY >= 0 && pY + pHeight > v.getY() - v.getHeight() * 0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
                     ) {
                         v.setTag("collected");
                         rl.removeView(v);
@@ -790,9 +862,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     // if player bottom lower than coin top AND player top higher than coin bottom
                     if (((pY + pHeight > v.getY() && pY < v.getY() + v.getHeight())
                             && ((vY <= 0 && pY < v.getY() + v.getHeight() * 1.3 && pY > v.getY() + v.getHeight() * 0.5)
-                            || (vX > 0 && pX + pWidth > (v.getX() - v.getWidth() * 0.3) && pX + pWidth < v.getX() + v.getWidth() * 0.5)
-                            || (vX < 0 && pX < v.getX() + v.getWidth() * 1.3 && pX > v.getX() + v.getWidth() * 0.5)
-                            || (vY > 0 && pY + pHeight > v.getY() - v.getHeight() * 0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
+                            || (vX >= 0 && pX + pWidth > (v.getX() - v.getWidth() * 0.3) && pX + pWidth < v.getX() + v.getWidth() * 0.5)
+                            || (vX <= 0 && pX < v.getX() + v.getWidth() * 1.3 && pX > v.getX() + v.getWidth() * 0.5)
+                            || (vY >= 0 && pY + pHeight > v.getY() - v.getHeight() * 0.3 && pY + pHeight < v.getY() + v.getHeight() * 0.5)))
                     ) {
                         v.setTag("collected");
                         rl.removeView(v);
@@ -869,7 +941,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             case MotionEvent.ACTION_CANCEL:
             case MotionEvent.ACTION_UP:
 
-                handler.removeCallbacks(indicatorRunnable);
                 rl.removeView(indicator);
                 float dx, dy;
                 if (squareDist < Math.pow(1.75*blockW, 2)) {
