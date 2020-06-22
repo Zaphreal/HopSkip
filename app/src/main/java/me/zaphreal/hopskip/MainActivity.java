@@ -1,27 +1,40 @@
 package me.zaphreal.hopskip;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import com.google.android.gms.auth.api.signin.GoogleSignIn;
+import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
+import com.google.android.gms.auth.api.signin.GoogleSignInClient;
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
+import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.Task;
 
 public class MainActivity extends AppCompatActivity {
+    private static final String TAG = "MainActivity";
     private int screenWidth, screenHeight;
     public static Player player;
     private RelativeLayout panel1, panel2, panel3, panel4;
     private int shopPage = 1;
-        int numPages = 2;
+    int numPages = 2;
+    private GoogleSignInAccount account;
+    private final int RC_SIGN_IN = 9001;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -34,10 +47,65 @@ public class MainActivity extends AppCompatActivity {
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
 
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestEmail()
+                .build();
 
-        // UPDATE LATER TO ALLOW FOR ACCOUNTS / LOCAL STORAGE OF PLAYER
-        player = new Player(R.drawable.frog);
+        final GoogleSignInClient googleClient = GoogleSignIn.getClient(this, gso);
+
+        account = GoogleSignIn.getLastSignedInAccount(this);
+        if (account == null) {
+            SignInButton signInButton = findViewById(R.id.sign_in_button);
+            signInButton.setSize(SignInButton.SIZE_STANDARD);
+            signInButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Intent signInIntent = googleClient.getSignInIntent();
+                    startActivityForResult(signInIntent, RC_SIGN_IN);
+                }
+            });
+
+            findViewById(R.id.login_layout).setVisibility(View.VISIBLE);
+        } else {
+            updateUI(false);
+        }
     }
+
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
+        if (requestCode == RC_SIGN_IN) {
+            // The Task returned from this call is always completed, no need to attach a listener.
+            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
+            handleSignInResult(task);
+        }
+    }
+
+    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+        try {
+            account = completedTask.getResult(ApiException.class);
+
+            // Signed in successfully, show authenticated UI.
+            updateUI(true);
+        } catch (ApiException e) {
+            // The ApiException status code indicates the detailed failure reason.
+            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+        }
+    }
+
+    public void updateUI(boolean firstLogin) {
+//        FirebaseStorage storage = FirebaseStorage.getInstance();
+//        StorageReference storageRef = storage.getReference();
+        findViewById(R.id.login_layout).setVisibility(View.GONE);
+        player = new Player(getSharedPreferences(account.getEmail(), Context.MODE_PRIVATE), firstLogin);
+    }
+
+
+    // Navigation functions
 
     public void startGame(View view) {
         Intent intent = new Intent(this, GameActivity.class);
@@ -84,6 +152,11 @@ public class MainActivity extends AppCompatActivity {
         params.width = (int)(screenWidth * 0.2);
         params.height = (int)(screenHeight * 0.725);
         panel4.setLayoutParams(params);
+
+        LinearLayout shopBalance = findViewById(R.id.shop_balance);
+        params = shopBalance.getLayoutParams();
+        params.width = (int)(screenWidth * 0.15);
+        shopBalance.setLayoutParams(params);
 
         final ImageView shopBack = findViewById(R.id.shop_back);
         params = shopBack.getLayoutParams();
@@ -153,6 +226,20 @@ public class MainActivity extends AppCompatActivity {
         panel2.removeAllViews();
         panel3.removeAllViews();
         panel4.removeAllViews();
+
+        ImageView shopCoinIcon = findViewById(R.id.shop_coin_icon);
+        switch (player.getDrawableID()) {
+            case R.drawable.bunny:
+                shopCoinIcon.setImageResource(R.drawable.coin_bunny);
+                break;
+            case R.drawable.frog:
+            default:
+                shopCoinIcon.setImageResource(R.drawable.coin_frog);
+                break;
+        }
+        TextView shopCoinCount = findViewById(R.id.shop_coin_count);
+        shopCoinCount.setText(String.valueOf(player.getBalance()));
+
         switch (page) {
             case 1:
                 createShopItem(panel1,"Frog", 0, R.drawable.frog, 0);
@@ -192,7 +279,28 @@ public class MainActivity extends AppCompatActivity {
 
         if (type == 0) {
 
-            if (!player.hasCharacter(title)) {
+            if (player.hasCharacter(title)) {
+
+                TextView ownedView = new TextView(this);
+                ownedView.setWidth((int)(layoutWidth * 0.75));
+                ownedView.setHeight((int)(layoutHeight * 0.15)); // 0.825 + 0.0625 = 0.8875 midline
+                ownedView.setAutoSizeTextTypeWithDefaults(TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM);
+                ownedView.setX(layoutWidth * 0.125f);
+                ownedView.setY(layoutHeight * 0.8125f);
+                ownedView.setTypeface(getResources().getFont(R.font.crom));
+                ownedView.setGravity(Gravity.CENTER);
+                ownedView.setMaxLines(1);
+                if (player.getDrawableID() == imgResourse) {
+                    ownedView.setText("Equipped");
+                    ownedView.setTextColor(Color.rgb(125, 246, 81));
+                } else {
+                    ownedView.setText("Owned");
+                    ownedView.setTextColor(Color.rgb(246, 224, 81));
+                }
+
+                itemLayout.addView(ownedView);
+
+            } else {
 
                 ImageView coinIcon = new ImageView(this);
                 if (MainActivity.player.getDrawableID() == R.drawable.frog) {
@@ -226,26 +334,6 @@ public class MainActivity extends AppCompatActivity {
                     priceView.setTextColor(Color.WHITE);
                 }
                 itemLayout.addView(priceView);
-
-            } else {
-                TextView ownedView = new TextView(this);
-                ownedView.setWidth((int)(layoutWidth * 0.75));
-                ownedView.setHeight((int)(layoutHeight * 0.15)); // 0.825 + 0.0625 = 0.8875 midline
-                ownedView.setAutoSizeTextTypeWithDefaults(TextView.AUTO_SIZE_TEXT_TYPE_UNIFORM);
-                ownedView.setX(layoutWidth * 0.125f);
-                ownedView.setY(layoutHeight * 0.8125f);
-                ownedView.setTypeface(getResources().getFont(R.font.crom));
-                ownedView.setGravity(Gravity.CENTER);
-                ownedView.setMaxLines(1);
-                if (player.getDrawableID() == imgResourse) {
-                    ownedView.setText("Equipped");
-                    ownedView.setTextColor(Color.rgb(125, 246, 81));
-                } else {
-                    ownedView.setText("Owned");
-                    ownedView.setTextColor(Color.rgb(246, 224, 81));
-                }
-
-                itemLayout.addView(ownedView);
             }
 
             itemLayout.setOnTouchListener(new View.OnTouchListener() {
@@ -253,14 +341,12 @@ public class MainActivity extends AppCompatActivity {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
-                        if (!player.hasCharacter(title)) {
-                            if (player.getBalance() >= price) {
-                                player.modifyBalanceBy(-price);
-                                player.unlockCharacter(title);
-                                player.setDrawableID(imgResourse);
-                                openShopPage(shopPage);
-                            }
-                        } else {
+                        if (player.hasCharacter(title)) {
+                            player.setDrawableID(imgResourse);
+                            openShopPage(shopPage);
+                        } else if (player.getBalance() >= price) {
+                            player.modifyBalanceBy(-price);
+                            player.unlockCharacter(title);
                             player.setDrawableID(imgResourse);
                             openShopPage(shopPage);
                         }

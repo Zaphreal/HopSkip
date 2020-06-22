@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "187954889190",
+    "firebase_url": "https://hopskip-1592847355214.firebaseio.com",
+    "project_id": "hopskip-1592847355214",
+    "storage_bucket": "hopskip-1592847355214.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:187954889190:android:438c52718d296f5e9c9627",
+        "android_client_info": {
+          "package_name": "me.zaphreal.hopskip"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "187954889190-a8t8l8el3u5rf9hmrjoahpgqio2m5p8i.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "me.zaphreal.hopskip",
+            "certificate_hash": "c690976d6ca93910a0f93d6c0405a70f3167329f"
+          }
+        },
+        {
+          "client_id": "187954889190-e7887k9sc50qv9226dngeok2qut3tv4p.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBkYtg9_3_0Mv4B5Ga0wnk2hrtBzKCAZhA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "187954889190-e7887k9sc50qv9226dngeok2qut3tv4p.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

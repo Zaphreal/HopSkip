@@ -41,14 +41,14 @@
             android:id="@+id/right_menu">
         <ImageView
                 android:layout_width="2dp"
-                android:layout_height="22dp" app:srcCompat="@drawable/coin_frog" android:id="@+id/coin_icon"
-                android:layout_weight="1"/>
+                android:layout_height="22dp" app:srcCompat="@drawable/coin_frog"
+                android:layout_weight="1" android:id="@+id/coin_icon"/>
         <TextView
                 android:text="0"
                 android:layout_width="0dp"
-                android:layout_height="match_parent" android:id="@+id/coin_count" android:layout_weight="1"
+                android:layout_height="match_parent" android:layout_weight="1"
                 android:fontFamily="@font/score"
-                app:autoSizeTextType="uniform" android:textAlignment="center"/>
+                app:autoSizeTextType="uniform" android:textAlignment="center" android:id="@+id/coin_count"/>
         <ImageView
                 android:layout_width="15dp"
                 android:layout_height="25dp" app:srcCompat="@drawable/button_pause"
