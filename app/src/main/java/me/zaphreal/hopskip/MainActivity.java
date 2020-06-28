@@ -1,7 +1,6 @@
 package me.zaphreal.hopskip;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
@@ -18,6 +17,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+import com.firebase.ui.auth.AuthUI;
+import com.firebase.ui.auth.IdpResponse;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -25,6 +26,13 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -33,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
     private RelativeLayout panel1, panel2, panel3, panel4;
     private int shopPage = 1;
     int numPages = 2;
-    private GoogleSignInAccount account;
+    //private GoogleSignInAccount account;
+    private FirebaseUser user;
     private final int RC_SIGN_IN = 9001;
 
     @Override
@@ -47,28 +56,46 @@ public class MainActivity extends AppCompatActivity {
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
 
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestEmail()
-                .build();
+        List<AuthUI.IdpConfig> providers = Collections.singletonList(
+                new AuthUI.IdpConfig.GoogleBuilder().build());
+//                new AuthUI.IdpConfig.FacebookBuilder().build(),
+//                new AuthUI.IdpConfig.TwitterBuilder().build());
 
-        final GoogleSignInClient googleClient = GoogleSignIn.getClient(this, gso);
-
-        account = GoogleSignIn.getLastSignedInAccount(this);
-        if (account == null) {
-            SignInButton signInButton = findViewById(R.id.sign_in_button);
-            signInButton.setSize(SignInButton.SIZE_STANDARD);
-            signInButton.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Intent signInIntent = googleClient.getSignInIntent();
-                    startActivityForResult(signInIntent, RC_SIGN_IN);
-                }
-            });
-
-            findViewById(R.id.login_layout).setVisibility(View.VISIBLE);
+        if (FirebaseAuth.getInstance().getCurrentUser() == null) {
+            startActivityForResult(
+                    AuthUI.getInstance()
+                            .createSignInIntentBuilder()
+                            .setAvailableProviders(providers)
+                            .build(),
+                    RC_SIGN_IN);
         } else {
+            user = FirebaseAuth.getInstance().getCurrentUser();
             updateUI(false);
         }
+
+//        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+//                .requestEmail()
+//                .requestId()
+//                .build();
+//
+//        final GoogleSignInClient googleClient = GoogleSignIn.getClient(this, gso);
+//
+//        account = GoogleSignIn.getLastSignedInAccount(this);
+//        if (account == null) {
+//            SignInButton signInButton = findViewById(R.id.sign_in_button);
+//            signInButton.setSize(SignInButton.SIZE_STANDARD);
+//            signInButton.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View v) {
+//                    Intent signInIntent = googleClient.getSignInIntent();
+//                    startActivityForResult(signInIntent, RC_SIGN_IN);
+//                }
+//            });
+//
+//            findViewById(R.id.login_layout).setVisibility(View.VISIBLE);
+//        } else {
+//            updateUI(false);
+//        }
     }
 
 
@@ -78,30 +105,34 @@ public class MainActivity extends AppCompatActivity {
 
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-            // The Task returned from this call is always completed, no need to attach a listener.
-            Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
-            handleSignInResult(task);
+            IdpResponse response = IdpResponse.fromResultIntent(data);
+
+            if (resultCode == RESULT_OK) {
+                // Successfully signed in
+                user = FirebaseAuth.getInstance().getCurrentUser();
+                updateUI(true);
+            }
         }
     }
 
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
-        try {
-            account = completedTask.getResult(ApiException.class);
-
-            // Signed in successfully, show authenticated UI.
-            updateUI(true);
-        } catch (ApiException e) {
-            // The ApiException status code indicates the detailed failure reason.
-            // Please refer to the GoogleSignInStatusCodes class reference for more information.
-            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
-        }
-    }
+//    private void handleSignInResult(Task<GoogleSignInAccount> completedTask) {
+//        try {
+//            account = completedTask.getResult(ApiException.class);
+//
+//            // Signed in successfully, show authenticated UI.
+//            updateUI(true);
+//        } catch (ApiException e) {
+//            // The ApiException status code indicates the detailed failure reason.
+//            // Please refer to the GoogleSignInStatusCodes class reference for more information.
+//            Log.w(TAG, "signInResult:failed code=" + e.getStatusCode());
+//        }
+//    }
 
     public void updateUI(boolean firstLogin) {
-//        FirebaseStorage storage = FirebaseStorage.getInstance();
-//        StorageReference storageRef = storage.getReference();
         findViewById(R.id.login_layout).setVisibility(View.GONE);
-        player = new Player(getSharedPreferences(account.getEmail(), Context.MODE_PRIVATE), firstLogin);
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+        //getSharedPreferences(account.getEmail(), Context.MODE_PRIVATE)
+        player = new Player(user.getUid(), firstLogin);
     }
 
 
