@@ -1,8 +1,5 @@
 package me.zaphreal.hopskip;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-import androidx.annotation.NonNull;
 import com.google.firebase.database.*;
 
 import java.util.ArrayList;
@@ -15,39 +12,27 @@ public class Player {
     private int drawableID;
     private String chars;
     private ArrayList<String> unlockedCharacters;
-    private DatabaseReference database;
-        //private final SharedPreferences prefs;
+    private final DatabaseReference database;
 
-    Player(String userID, boolean firstLogin) {
-        //this.prefs = prefs;
+    Player(String userID) {
         database = FirebaseDatabase.getInstance().getReference("users/" + Objects.requireNonNull(userID));
-        if (firstLogin) {
-//            SharedPreferences.Editor editor = prefs.edit();
-//            editor.putInt("balance", 0);
-//            editor.putString("chars", "Frog");
-//            editor.putInt("drawableID", R.drawable.frog);
-//            editor.apply();
 
-            database.child("balance").setValue((int)0);
-            database.child("chars").setValue("Frog");
-            database.child("drawableID").setValue(R.drawable.frog);
-            //storageRef.child("unlockedCharacters").setValue(new ArrayList<>(Collections.singletonList("Frog")));
+        database.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot snapshot) {
+                if (snapshot.child("chars").getValue() == null) {
+                    System.out.println("Chars for this account is null, new account detected!");
+                    database.child("balance").setValue((int)0);
+                    database.child("chars").setValue("Frog");
+                    database.child("drawableID").setValue(R.drawable.frog);
+                    //storageRef.child("unlockedCharacters").setValue(new ArrayList<>(Collections.singletonList("Frog")));
 
-            balance = 0;
-            chars = "Frog";
-            drawableID = R.drawable.frog;
-            unlockedCharacters = new ArrayList<>(Collections.singletonList("Frog"));
-        } else {
-//            balance = prefs.getInt("balance", 0);
-//            drawableID = prefs.getInt("drawableID", R.drawable.frog);
-//            chars = prefs.getString("chars", "Frog");
-//            unlockedCharacters = new ArrayList<>(Arrays.asList(chars.split(",")));
-            database.addListenerForSingleValueEvent(new ValueEventListener() {
-                @Override
-                public void onDataChange(DataSnapshot snapshot) {
-                    System.out.println("");
-                    System.out.println("THIS IS CALLED");
-                    System.out.println("");
+                    balance = 0;
+                    chars = "Frog";
+                    drawableID = R.drawable.frog;
+                    unlockedCharacters = new ArrayList<>(Collections.singletonList("Frog"));
+                } else {
+                    System.out.println("Chars not null, existing account detected!");
                     balance = (long) snapshot.child("balance").getValue();
                     drawableID = Integer.parseInt(String.valueOf(snapshot.child("drawableID").getValue()));
                     chars = (String) snapshot.child("chars").getValue();
@@ -57,14 +42,13 @@ public class Player {
 //                    System.out.println("Characters: " + chars);
 //                    System.out.println("unlockedCharacters: " + unlockedCharacters.toString());
                 }
+            }
 
-                @Override
-                public void onCancelled(DatabaseError error) {
-                    System.out.println("CANCELED???? " + error.toException());
-                }
-            });
-
-        }
+            @Override
+            public void onCancelled(DatabaseError error) {
+                System.out.println("CANCELED???? " + error.toException());
+            }
+        });
     }
 
     public boolean hasCharacter(String character) {

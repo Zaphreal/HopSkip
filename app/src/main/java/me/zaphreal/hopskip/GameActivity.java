@@ -119,6 +119,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         pView.setTranslationZ(0.1f);
         pView.setX((float)screenWidth * 0.5f);
         pView.setY((float)screenHeight * (7f/NUM_BLOCKS_X));
+        pView.setScaleType(ImageView.ScaleType.FIT_XY);
 
         scrollAccel = -0.2f;
         scrollSpeed = scrollAccel;

@@ -6,7 +6,6 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
@@ -15,27 +14,21 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.auth.IdpResponse;
-import com.google.android.gms.auth.api.signin.GoogleSignIn;
-import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
-import com.google.android.gms.auth.api.signin.GoogleSignInClient;
-import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
-import com.google.android.gms.common.SignInButton;
-import com.google.android.gms.common.api.ApiException;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.FirebaseDatabase;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String TAG = "MainActivity";
+    //private static final String TAG = "MainActivity";
     private int screenWidth, screenHeight;
     public static Player player;
     private RelativeLayout panel1, panel2, panel3, panel4;
@@ -56,6 +49,8 @@ public class MainActivity extends AppCompatActivity {
         screenWidth = metrics.widthPixels;
         screenHeight = metrics.heightPixels;
 
+        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
+
         List<AuthUI.IdpConfig> providers = Collections.singletonList(
                 new AuthUI.IdpConfig.GoogleBuilder().build());
 //                new AuthUI.IdpConfig.FacebookBuilder().build(),
@@ -70,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
                     RC_SIGN_IN);
         } else {
             user = FirebaseAuth.getInstance().getCurrentUser();
-            updateUI(false);
+            updateUI();
         }
 
 //        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
@@ -105,12 +100,12 @@ public class MainActivity extends AppCompatActivity {
 
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == RC_SIGN_IN) {
-            IdpResponse response = IdpResponse.fromResultIntent(data);
+            //IdpResponse response = IdpResponse.fromResultIntent(data);
 
             if (resultCode == RESULT_OK) {
                 // Successfully signed in
                 user = FirebaseAuth.getInstance().getCurrentUser();
-                updateUI(true);
+                updateUI();
             }
         }
     }
@@ -128,11 +123,10 @@ public class MainActivity extends AppCompatActivity {
 //        }
 //    }
 
-    public void updateUI(boolean firstLogin) {
+    public void updateUI() {
         findViewById(R.id.login_layout).setVisibility(View.GONE);
-        FirebaseDatabase.getInstance().setPersistenceEnabled(true);
         //getSharedPreferences(account.getEmail(), Context.MODE_PRIVATE)
-        player = new Player(user.getUid(), firstLogin);
+        player = new Player(user.getUid());
     }
 
 
@@ -387,5 +381,27 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
         }
+    }
+
+
+    public void openSettings (View view) {
+        AuthUI.getInstance()
+                .signOut(this)
+                .addOnCompleteListener(new OnCompleteListener<Void>() {
+                    public void onComplete(@NonNull Task<Void> task) {
+                        List<AuthUI.IdpConfig> providers = Collections.singletonList(
+                                new AuthUI.IdpConfig.GoogleBuilder().build());
+//                new AuthUI.IdpConfig.FacebookBuilder().build(),
+//                new AuthUI.IdpConfig.TwitterBuilder().build());
+
+                        startActivityForResult(
+                                AuthUI.getInstance()
+                                        .createSignInIntentBuilder()
+                                        .setAvailableProviders(providers)
+                                        .build(),
+                                RC_SIGN_IN);
+                    }
+                });
+
     }
 }
