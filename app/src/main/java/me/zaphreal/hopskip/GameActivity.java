@@ -30,7 +30,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     public static final int NUM_BLOCKS_Y = 10; // CHANGE BACK TO 8
 
     Handler handler = new Handler();
-    Runnable playerRunnable, bgRunnable;
+    Runnable playerRunnable;
     float vX, vY, blockW, blockH, scrollSpeed, scrollAccel;
     int screenHeight, screenWidth, floorHeight;
     long gameTimeInMilliseconds = 0;
@@ -40,7 +40,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
     int color = 180, colorCheckpoint = 0;
     long cloudSpawnTime = 3000;
-    HashMap<ImageView, Float> cloudSpeedMap = new HashMap<>();
+    HashMap<ImageView, AnimatorSet> cloudAnimators = new HashMap<>();
 
     BlockColumnGenerator gen;
     ArrayList<Block[]> blockList = new ArrayList<>();
@@ -73,6 +73,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         params.width = screenWidth;
         params.height = screenHeight;
         rl.setLayoutParams(params);
+
+        // Set background color
+        findViewById(R.id.background).setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
 
         gen = new BlockColumnGenerator(blockW, blockH, this);
         initBlockList();
@@ -124,60 +127,6 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         scrollAccel = -0.2f;
         scrollSpeed = scrollAccel;
         handlePhysics();
-        handleBackground();
-    }
-
-
-    public void handleBackground() {
-        final RelativeLayout background = findViewById(R.id.background);
-        background.setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
-        handler.postDelayed(bgRunnable = new Runnable() {
-            public void run() {
-                if (distanceScore >= colorCheckpoint + 50) {
-                    colorCheckpoint += 50;
-                    if (color == 0) {
-                        color = 359;
-                    } else {
-                        color--;
-                    }
-                    background.setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
-                }
-                if (gameTimeInMilliseconds >= cloudSpawnTime) {
-                    ImageView cloud = generateCloud();
-                    System.out.println(cloud);
-                    cloudSpeedMap.put(cloud, (float) (scrollSpeed * (1.25 + (Math.random()/2))));
-                    cloudSpawnTime += 20000 * (Math.random() + 0.75f);
-                    background.addView(cloud);
-                }
-
-                ArrayList<Animator> animList = new ArrayList<>();
-                Stack<ImageView> purgeStack = new Stack<>();
-                for (int i = 0; i < background.getChildCount(); i++) {
-                    ImageView view = (ImageView) background.getChildAt(i);
-
-                    if (view.getX() + view.getWidth() <= 0) {
-                        purgeStack.push(view);
-                    } else {
-                        ObjectAnimator anim = ObjectAnimator.ofFloat(view, "X", view.getX() + cloudSpeedMap.get(view));
-                        animList.add(anim);
-                    }
-                }
-
-                while (!purgeStack.empty()) {
-                    ImageView v = purgeStack.pop();
-                    cloudSpeedMap.remove(v);
-                    background.removeView(v);
-                }
-
-                AnimatorSet animSet = new AnimatorSet();
-                animSet.playTogether(animList);
-                animSet.setInterpolator(new LinearInterpolator());
-                animSet.setDuration(0);
-                animSet.start();
-
-                handler.postDelayed(bgRunnable, DELAY);
-            }
-        }, DELAY);
     }
 
     public ImageView generateCloud() {
@@ -227,6 +176,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         if (!gamePaused) {
 
             handler.removeCallbacks(playerRunnable);
+            for (AnimatorSet animSet : cloudAnimators.values()) {
+                animSet.pause();
+            }
 
             float menuHeight = screenHeight * 0.95f;
             RelativeLayout pauseLayout = new RelativeLayout(this);
@@ -316,6 +268,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
             rl.removeView(findViewById(90000000));
             gamePaused = false;
             handlePhysics();
+            for (AnimatorSet animSet : cloudAnimators.values()) {
+                animSet.resume();
+            }
         }
     }
 
@@ -643,6 +598,53 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 animSet.setInterpolator(new LinearInterpolator());
                 animSet.setDuration(0);
                 animSet.start();
+
+                // BACKGROUND HANDLER
+                final RelativeLayout background = findViewById(R.id.background);
+                if (distanceScore >= colorCheckpoint + 50) {
+                    colorCheckpoint += 50;
+                    if (color == 0) {
+                        color = 359;
+                    } else {
+                        color--;
+                    }
+                    background.setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
+                }
+                if (gameTimeInMilliseconds >= cloudSpawnTime) {
+                    final ImageView cloud = generateCloud();
+                    //System.out.println(cloud);
+                    //cloudSpeedMap.put(cloud, (float) (scrollSpeed * (1.25 + (Math.random()/2))));
+                    cloudSpawnTime += 15000 * (Math.random() + 0.75f);
+                    background.addView(cloud);
+
+                    ObjectAnimator anim = ObjectAnimator.ofFloat(cloud, "X", (float) (-screenWidth * 0.375));
+                    anim.addListener(new Animator.AnimatorListener() {
+                        @Override
+                        public void onAnimationStart(Animator animation) { }
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            background.removeView(cloud);
+                            cloudAnimators.remove(cloud);
+                        }
+                        @Override
+                        public void onAnimationCancel(Animator animation) {
+                            background.removeView(cloud);
+                            cloudAnimators.remove(cloud);
+                        }
+                        @Override
+                        public void onAnimationRepeat(Animator animation) { }
+                    });
+                    AnimatorSet cloudAnimSet = new AnimatorSet();
+                    cloudAnimSet.play(anim);
+                    cloudAnimSet.setInterpolator(new LinearInterpolator());
+                    System.out.println((long) ((screenWidth * 1.5) / (((-scrollSpeed * (1.25f + (Math.random()/2)))) / DELAY)));
+                    cloudAnimSet.setDuration((long) ((screenWidth * 1.375) / (((-scrollSpeed * (1.25f + (Math.random()/2)))) / DELAY)));
+                    cloudAnimSet.start();
+
+                    cloudAnimators.put(cloud, cloudAnimSet);
+                }
+
+                // END BACKGROUND
 
                 if (!columnLayouts.isEmpty() && columnLayouts.get(0).getX() <= -2 * blockW) {
                     blockList.remove(0);
