@@ -43,9 +43,11 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     HashMap<ImageView, AnimatorSet> cloudAnimators = new HashMap<>();
 
     BlockColumnGenerator gen;
+    EntityGenerator entityGen;
     ArrayList<Block[]> blockList = new ArrayList<>();
-    ArrayList<Entity> entityList = new ArrayList<>();
-    ArrayList<RelativeLayout> columnLayouts = new ArrayList<>();
+    //ArrayList<Entity> entityList = new ArrayList<>();
+    private static final ArrayList<Entity> entityList = new ArrayList<>();
+    private static final ArrayList<RelativeLayout> columnLayouts = new ArrayList<>();
     String[][] currStruct;
     int indexOfStructure = -1, columnIndex = 0;
 
@@ -78,6 +80,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         findViewById(R.id.background).setBackgroundColor(Color.HSVToColor(new float[]{color,0.15f,1f}));
 
         gen = new BlockColumnGenerator(blockW, blockH, this);
+        entityGen = new EntityGenerator(blockW, blockH, this);
         initBlockList();
 
         indicator = new ImageView(this);
@@ -236,6 +239,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
+
+                        columnLayouts.clear();
+                        entityList.clear();
+
                         recreate();
                         return true;
                     }
@@ -256,6 +263,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     if (event.getAction() == MotionEvent.ACTION_UP) {
+
+                        columnLayouts.clear();
+                        entityList.clear();
+
                         finish();
                         return true;
                     }
@@ -339,158 +350,18 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         columnLayouts.add(layout);
     }
 
-    private void generateEntity(Entity entity) {
-        ImageView v = entity.getView();
-
-        RelativeLayout.LayoutParams params =
-                new RelativeLayout.LayoutParams((int) entity.getWidth() + 1, (int) entity.getHeight());
-        v.setLayoutParams(params);
-        v.setX(columnLayouts.get(columnLayouts.size() - 1).getX() + ((blockW - entity.getWidth())/2) + (blockW * entity.getxOffset()));
-        v.setY(((blockH - entity.getHeight())/2) + (blockH * entity.getyOffset()));
-        if (entity.getType().contains("sync")) {
-            // will sync moving platform with speed and location of moving platform DIRECTLY on left
-
-            v.setY(entityList.get(entityList.indexOf(entity) - 1).getView().getY());
-            entity.setScaleVelocity(entityList.get(entityList.indexOf(entity) - 1).getScaleVelocity());
-        }
-        if (entity.getType().contains("platform")) {
-            v.setY(blockH * entity.getyOffset());
-        }
-        rl.addView(v);
-        entity.onScreen = true;
+    public static void addEntity(Entity e) {
+        entityList.add(e);
     }
 
-    private String[][] getStructure(int idx) {
-        String[][] structure;
-        switch (idx) {
-            case 1:
-                structure = new String[15][NUM_BLOCKS_Y];
-                structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[1] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[2] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
-                structure[3] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
-                structure[4] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
-                structure[5] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[6] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[7] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[8] = new String[]{"", "", "", "", "", "grass", "dirt"};
-                structure[9] = new String[]{"", "", "", "", "", "grass", "dirt"};
-                structure[10] = new String[]{"", "", "", "", "", "grass", "dirt"};
-                structure[11] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[12] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[13] = new String[]{"", "", "", "grass", "", "", "", "", "grass", "dirt"};
-                entityList.add(new Entity(this, "coin", 13, blockW, blockH, 0.5f, 2));
-                structure[14] = new String[]{"", "", "", "grass", "", "", "", "", "grass", "dirt"};
-                break;
-            case 2:
-                structure = new String[10][NUM_BLOCKS_Y];
-                structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[1] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[2] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[3] = new String[]{"", "", "", "", "", "", "", "", "air"};
-                structure[4] = new String[]{"", "", "", "", "", "", "", "", "air"};
-                structure[5] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
-                entityList.add(new Entity(this, "move_brick", 4, blockW, blockH, 0, 4));
-                entityList.add(new Entity(this, "move_brick_sync", 5, blockW, blockH, 0, 4));
-                entityList.add(new Entity(this, "move_brick", 4, blockW, blockH, 0, 8));
-                entityList.add(new Entity(this, "move_brick_sync", 5, blockW, blockH, 0, 8));
-                structure[6] = new String[]{"", "", "", "", "", "", "",  "",  "", "air"};
-                structure[7] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[8] = new String[]{"", "", "", "", "", "", "grass", "dirt"};
-                structure[9] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                break;
-            // basic heaven stairs
-            case 3:
-                structure = new String[10][NUM_BLOCKS_Y];
-                structure[0] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
-                structure[1] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
-                structure[2] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
-                structure[3] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
-                structure[4] = new String[]{"", "", "", "", "", "", "grass", ""};
-                structure[5] = new String[]{"", "", "", "", "", "", "grass", ""};
-                structure[6] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
-                structure[7] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
-                structure[8] = new String[]{"", "", "", "", "", "grass", ""};
-                structure[9] = new String[]{"", "", "", "", "", "grass", ""};
-                break;
-            // basic float pyramid
-            case 4:
-                structure = new String[10][NUM_BLOCKS_Y];
-                structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[1] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
-                structure[2] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
-                structure[3] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[4] = new String[]{"", "", "", "grass", "", "", "", "", "grass", "dirt"};
-                entityList.add(new Entity(this, "coin", 4, blockW, blockH, 0.5f, 2));
-                structure[5] = new String[]{"", "", "", "grass", "", "", "", "", "grass", "dirt"};
-                structure[6] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[7] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
-                structure[8] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
-                structure[9] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                break;
-            // hopscotch tower
-            case 5:
-                structure = new String[10][NUM_BLOCKS_Y];
-                structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[1] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[2] = new String[]{"brick1", "brick2", "brick1", "brick2", "brick1", "brick2", "bg_wood", "bg_wood", "wood", "dirt"};
-                structure[3] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood", "dirt"};
-                entityList.add(new Entity(this, "coin", 3, blockW, blockH, 0, 1));
-                entityList.add(new Entity(this, "platform_wood", 3, blockW, blockH, 0,2));
-                entityList.add(new Entity(this, "platform_wood", 3, blockW, blockH, 0, 5));
-                structure[4] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood", "dirt"};
-                entityList.add(new Entity(this, "platform_wood", 4, blockW, blockH, 0, 5));
-                structure[5] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood", "dirt"};
-                structure[6] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "wood", "dirt"};
-                structure[7] = new String[]{"bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "bg_wood", "brick1", "wood", "dirt"};
-                entityList.add(new Entity(this, "platform_wood", 7, blockW, blockH, 0, 3));
-                structure[8] = new String[]{"brick1", "brick2", "bg_wood", "brick2", "brick1", "brick2", "brick1", "brick2", "brick1", "dirt"};
-                structure[9] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                break;
-            // mission:impossible
-            case 6:
-                structure = new String[26][NUM_BLOCKS_Y];
-                structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[1] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
-                structure[2] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
-                structure[3] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[4] = new String[]{"", "", "", "", "grass", "", "", "", "grass", "dirt"};
-                structure[5] = new String[]{"", "", "", "", "grass", "", "", "", "grass", "dirt"};
-                structure[6] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                structure[7] = new String[]{"brick1", "brick2", "", "", "brick1", "brick2", "brick1", "brick2", "brick1", "brick2"};
-                structure[8] = new String[]{"brick1", "brick2", "", "", "", "", "", "", "brick1", "brick2"};
-                structure[9] = new String[]{"brick1", "brick2", "", "", "", "", "", "", "brick1", "brick2"};
-                structure[10] = new String[]{"brick1", "brick2", "", "", "", "", "", "", "brick1", "brick2"};
-                structure[11] = new String[]{"brick1", "brick2", "", "", "", "", "", "", "brick1", "brick2"};
-                structure[12] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                entityList.add(new Entity(this, "move_brick", 12, blockW, blockH, 0, 6));
-                structure[13] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                entityList.add(new Entity(this, "move_brick_sync", 13, blockW, blockH, 0, 6));
-                structure[14] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[15] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[16] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                entityList.add(new Entity(this, "move_brick", 16, blockW, blockH, 0, 5));
-                structure[17] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[18] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[19] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                entityList.add(new Entity(this, "move_brick", 19, blockW, blockH, 0, 7));
-
-                structure[20] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[21] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[22] = new String[]{"brick1", "brick2", "", "", "", "", "", ""};
-                structure[23] = new String[]{"brick1", "brick2", "", "", "", "", "", "", "brick1", "brick2"};
-                structure[24] = new String[]{"brick1", "brick2", "brick2", "brick1", "brick2", "brick1", "", "", "brick1", "brick2"};
-                structure[25] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                break;
-            // flat earth, acts as case 0
-            default:
-                structure = new String[5][NUM_BLOCKS_Y];
-                for (int i = 0; i < structure.length; i++) {
-                    structure[i] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
-                }
-        }
-        return structure;
+    public static Entity getPrevEntity(Entity e) {
+        return entityList.get(entityList.indexOf(e) - 1);
     }
+
+    public static RelativeLayout getLastColumnLayout() {
+        return columnLayouts.get(columnLayouts.size() - 1);
+    }
+
 
     //----------------------------Game Physics------------------------------\\
 
@@ -666,7 +537,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         Random rand = new Random();
                         indexOfStructure = rand.nextInt(7);
                         columnIndex = 0;
-                        currStruct = getStructure(indexOfStructure);
+                        currStruct = gen.getStructure(indexOfStructure);
                         //System.out.println("New structure generated: index = " + indexOfStructure);
                     }
                     blockList.add(gen.generate(currStruct[columnIndex]));
@@ -674,7 +545,8 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
                     for (Entity e : entityList) {
                         if (e.getColumnIdx() == columnIndex && !e.onScreen) {
-                            generateEntity(e);
+                            entityGen.generate(e);
+                            rl.addView(e.getView());
                         }
                     }
 
@@ -712,9 +584,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         floorHeight = screenHeight + pView.getHeight() + 1;
 
         for (RelativeLayout layout : columnLayouts) {      // iterate through all column layouts
-            for (int i = 0; i < layout.getChildCount(); i++) {
-                ImageView v = (ImageView)layout.getChildAt(i);
-                float viewX = (layout.getX() + ((float)layout.getWidth() - v.getWidth())/2);
+            for (int j = 0; j < layout.getChildCount(); j++) {
+                ImageView v = (ImageView) layout.getChildAt(j);
+                float viewX = (layout.getX() + ((float) layout.getWidth() - v.getWidth()) / 2);
 
                 // skip entire column if (column right < player left) OR (player right < column left) OR the block is air
                 if (viewX + v.getWidth() < pX || pX + pWidth < viewX || v.getDrawable() == null) {
@@ -737,16 +609,17 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     // if moving up and player top is within bottom 30% of block
                     if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.7) {
                         //System.out.println("CEILING HIT: pY = " + pY + ", bBottom = " + v.getY() + v.getHeight());
-                        if (pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3) {
-                            pView.setX(viewX - pWidth);
-                            vX = scrollSpeed;
-                        } else if (pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
-                            pView.setX(viewX + v.getWidth() - marginX);
-                            hitWall();
-                        } else {
-                            pView.setY(v.getY() + v.getHeight() - marginY);
-                            hitCeiling();
-                        }
+                        // player right inside block left and player top inside block bottom
+//                        if ((pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3)) {
+//                            pView.setX(viewX - pWidth);
+//                            vX = scrollSpeed;
+//                        } else if (pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
+//                            pView.setX(viewX + v.getWidth() - marginX);
+//                            hitWall();
+//                        } else {
+                        pView.setY(v.getY() + v.getHeight() - marginY);
+                        hitCeiling();
+                        //}
                         continue;
                     }
                     // if (moving right AND player right > block left within left 30% of block)
@@ -763,7 +636,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     }
                 }
                 // if not wall or ceiling and if block height is higher than current highest block under player, update to block
-                else if (viewX + v.getWidth() >= pView.getX() + 0.3*pView.getWidth() && pView.getX() + 0.7*pView.getWidth() >= viewX) {
+                else if (viewX + v.getWidth() >= pView.getX() + 0.3 * pView.getWidth() && pView.getX() + 0.7 * pView.getWidth() >= viewX) {
                     if ((int) v.getY() < floorHeight) {
                         floorHeight = (int) v.getY();
                     }
@@ -909,6 +782,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
 
     private void playerDied() {
         handler.removeCallbacks(playerRunnable);
+
+        columnLayouts.clear();
+        entityList.clear();
 
         final Intent intent = new Intent(this, ResultsActivity.class);
         intent.putExtra("score", distanceScoreView.getText());
