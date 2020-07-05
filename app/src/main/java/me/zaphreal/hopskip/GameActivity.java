@@ -737,9 +737,16 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     // if moving up and player top is within bottom 30% of block
                     if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.7) {
                         //System.out.println("CEILING HIT: pY = " + pY + ", bBottom = " + v.getY() + v.getHeight());
-
-                        pView.setY(v.getY() + v.getHeight() - marginY);
-                        hitCeiling();
+                        if (pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3) {
+                            pView.setX(viewX - pWidth);
+                            vX = scrollSpeed;
+                        } else if (pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
+                            pView.setX(viewX + v.getWidth() - marginX);
+                            hitWall();
+                        } else {
+                            pView.setY(v.getY() + v.getHeight() - marginY);
+                            hitCeiling();
+                        }
                         continue;
                     }
                     // if (moving right AND player right > block left within left 30% of block)
