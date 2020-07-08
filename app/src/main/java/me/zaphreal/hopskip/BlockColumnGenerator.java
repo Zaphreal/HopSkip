@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.widget.ImageView;
 
+import java.util.Random;
+
 import static me.zaphreal.hopskip.GameActivity.NUM_BLOCKS_Y;
 
 public class BlockColumnGenerator {
@@ -69,9 +71,9 @@ public class BlockColumnGenerator {
         return blockColumn;
     }
 
-    String[][] getStructure(int idx) {
+    String[][] getRandomStructure() {
         String[][] structure;
-        switch (idx) {
+        switch ((new Random()).nextInt(7)) {
             case 1:
                 structure = new String[15][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};

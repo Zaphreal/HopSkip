@@ -45,11 +45,11 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     BlockColumnGenerator gen;
     EntityGenerator entityGen;
     ArrayList<Block[]> blockList = new ArrayList<>();
-    //ArrayList<Entity> entityList = new ArrayList<>();
     private static final ArrayList<Entity> entityList = new ArrayList<>();
     private static final ArrayList<RelativeLayout> columnLayouts = new ArrayList<>();
     String[][] currStruct;
-    int indexOfStructure = -1, columnIndex = 0;
+    boolean needNewStruct = true;
+    int columnIndex = 0, columnID = 0, oldestColumnID = 0;
 
     RelativeLayout rl;
     ImageView pView, indicator;
@@ -343,9 +343,14 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                 blockImg.setX((blockW - block.getWidth())/2);
                 blockImg.setY((y * blockH) + ((blockH - block.getHeight())/2));
 
+                if (blockImg.getTag() == null) {
+                    blockImg.setTag(columnID + "," + y);
+                }
+
                 layout.addView(blockImg);
             }
         }
+        columnID++;
         rl.addView(layout);
         columnLayouts.add(layout);
     }
@@ -521,6 +526,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     blockList.remove(0);
                     rl.removeView(columnLayouts.get(0));
                     columnLayouts.remove(0);
+                    oldestColumnID++;
 
                     Iterator<Entity> itr = entityList.iterator();
                     while (itr.hasNext()) {
@@ -533,12 +539,10 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         }
                     }
 
-                    if (indexOfStructure == -1) {
-                        Random rand = new Random();
-                        indexOfStructure = rand.nextInt(7);
+                    if (needNewStruct) {
                         columnIndex = 0;
-                        currStruct = gen.getStructure(indexOfStructure);
-                        //System.out.println("New structure generated: index = " + indexOfStructure);
+                        currStruct = gen.getRandomStructure();
+                        needNewStruct = false;
                     }
                     blockList.add(gen.generate(currStruct[columnIndex]));
                     appendBlockColumn();
@@ -553,7 +557,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     columnIndex++;
 
                     if (columnIndex == currStruct.length) {
-                        indexOfStructure = -1;
+                        needNewStruct = true;
                     }
                 }
                 // DIVIDER
@@ -583,7 +587,9 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
         float pHeight = pView.getHeight() - (2 * marginY);
         floorHeight = screenHeight + pView.getHeight() + 1;
 
-        for (RelativeLayout layout : columnLayouts) {      // iterate through all column layouts
+        for (int i = 0; i < columnLayouts.size(); i++) {      // iterate through all column layouts
+            RelativeLayout layout = columnLayouts.get(i);
+
             for (int j = 0; j < layout.getChildCount(); j++) {
                 ImageView v = (ImageView) layout.getChildAt(j);
                 float viewX = (layout.getX() + ((float) layout.getWidth() - v.getWidth()) / 2);
@@ -593,11 +599,11 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     continue;        // if column more than a block away, skip it
                 }
 
-                if (v.getTag() != null) {
-                    if (v.getTag().equals("background")) {
-                        continue;
-                    }
+                //if (v.getTag() != null) {
+                if (v.getTag().equals("background")) {
+                    continue;
                 }
+                //}
 
                 //if player bottom is "lower" than block top, it is a potential wall and cannot be floor
                 if (pY + pHeight > v.getY()) {
@@ -610,16 +616,25 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                     if (vY <= 0 && pY < v.getY() + v.getHeight() && pY > v.getY() + v.getHeight() * 0.7) {
                         //System.out.println("CEILING HIT: pY = " + pY + ", bBottom = " + v.getY() + v.getHeight());
                         // player right inside block left and player top inside block bottom
-//                        if ((pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3)) {
-//                            pView.setX(viewX - pWidth);
-//                            vX = scrollSpeed;
-//                        } else if (pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
-//                            pView.setX(viewX + v.getWidth() - marginX);
-//                            hitWall();
-//                        } else {
+                        String[] blockInfo = ((String) v.getTag()).split(",");
+                        // if leftmost column OR there is not a block to the direct left of v
+                        if (i == 0 || blockList.get(Integer.parseInt(blockInfo[0]) - 1 - oldestColumnID)[Integer.parseInt(blockInfo[1])] == null) {
+                            if ((pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3)) {
+                                pView.setX(viewX - pWidth);
+                                vX = scrollSpeed;
+                                continue;
+                            }
+                        }
+                        // if rightmost column OR there is not a block to the direct right of v
+                        if (i == columnLayouts.size() - 1 || blockList.get(Integer.parseInt(blockInfo[0]) + 1 - oldestColumnID)[Integer.parseInt(blockInfo[1])] == null) {
+                            if (pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
+                                pView.setX(viewX + v.getWidth() - marginX);
+                                vX = scrollSpeed;
+                                continue;
+                            }
+                        }
                         pView.setY(v.getY() + v.getHeight() - marginY);
                         hitCeiling();
-                        //}
                         continue;
                     }
                     // if (moving right AND player right > block left within left 30% of block)
