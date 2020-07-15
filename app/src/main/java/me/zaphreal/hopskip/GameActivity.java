@@ -27,7 +27,7 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
     final int DELAY = 10;
     final float ACC = 2f;
     public static final int NUM_BLOCKS_X = 14;
-    public static final int NUM_BLOCKS_Y = 10; // CHANGE BACK TO 8
+    public static final int NUM_BLOCKS_Y = 10;
 
     Handler handler = new Handler();
     Runnable playerRunnable;
@@ -619,17 +619,21 @@ public class GameActivity extends AppCompatActivity implements View.OnTouchListe
                         String[] blockInfo = ((String) v.getTag()).split(",");
                         // if leftmost column OR there is not a block to the direct left of v
                         if (i == 0 || blockList.get(Integer.parseInt(blockInfo[0]) - 1 - oldestColumnID)[Integer.parseInt(blockInfo[1])] == null) {
-                            if ((pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.3)) {
+                            // if moving right AND player right within 20% of block left
+                            if (vX >= 0 && pX + pWidth > viewX && pX + pWidth < viewX + v.getWidth() * 0.2) {
                                 pView.setX(viewX - pWidth);
-                                vX = scrollSpeed;
+                                //vX = scrollSpeed;
+                                hitWall();
                                 continue;
                             }
                         }
                         // if rightmost column OR there is not a block to the direct right of v
                         if (i == columnLayouts.size() - 1 || blockList.get(Integer.parseInt(blockInfo[0]) + 1 - oldestColumnID)[Integer.parseInt(blockInfo[1])] == null) {
-                            if (pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.7) {
+                            // if moving left AND player left within 20% of block right
+                            if (vX <= 0 && pX < viewX + v.getWidth() && pX > viewX + v.getWidth() * 0.8) {
                                 pView.setX(viewX + v.getWidth() - marginX);
-                                vX = scrollSpeed;
+                                //vX = scrollSpeed;
+                                hitWall();
                                 continue;
                             }
                         }

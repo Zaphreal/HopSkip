@@ -73,7 +73,7 @@ public class BlockColumnGenerator {
 
     String[][] getRandomStructure() {
         String[][] structure;
-        switch ((new Random()).nextInt(7)) {
+        switch ((new Random()).nextInt(8)) {
             case 1:
                 structure = new String[15][NUM_BLOCKS_Y];
                 structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
@@ -192,6 +192,34 @@ public class BlockColumnGenerator {
                 structure[23] = new String[]{"brick1", "brick2", "", "", "", "", "", "", "brick1", "brick2"};
                 structure[24] = new String[]{"brick1", "brick2", "brick2", "brick1", "brick2", "brick1", "", "", "brick1", "brick2"};
                 structure[25] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                break;
+            // optional parkour
+            case 7:
+                structure = new String[22][NUM_BLOCKS_Y];
+                structure[0] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                structure[1] = new String[]{"", "grass", "", "", "", "", "", "", "grass", "dirt"};
+                GameActivity.addEntity(new Entity(context, "coin", 1, width, height, 0.5f, 0));
+                structure[2] = new String[]{"", "grass", "", "", "", "", "", "", "grass", "dirt"};
+                structure[3] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                structure[4] = new String[]{"", "", "", "", "", "grass", "", "", "grass", "dirt"};
+                structure[5] = new String[]{"", "", "", "", "", "grass", "", "", "", "grass"};
+                structure[6] = new String[]{"", "", "", "", "grass", "dirt", "", "", "", "grass"};
+                structure[7] = new String[]{"", "", "", "", "grass", "", "", "", "", "grass"};
+                structure[8] = new String[]{"", "", "", "", "grass", "", "", "", "grass", "dirt"};
+                structure[9] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                structure[10] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                structure[11] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
+                structure[12] = new String[]{"", "", "", "", "", "", "", "grass", "dirt"};
+                structure[13] = new String[]{"", "", "", "grass", "", "", "", "grass", "dirt"};
+                structure[14] = new String[]{"", "", "", "grass", "", "", "", "", "grass", "dirt"};
+                structure[15] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                structure[16] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
+                structure[17] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
+                structure[18] = new String[]{"", "", "", "", "", "", "", "", "", "air"};
+                structure[19] = new String[]{"", "", "grass", "", "", "", "", "", "grass", "dirt"};
+                GameActivity.addEntity(new Entity(context, "coin", 19, width, height, 0.5f, 1));
+                structure[20] = new String[]{"", "", "grass", "", "", "", "", "", "grass", "dirt"};
+                structure[21] = new String[]{"", "", "", "", "", "", "", "", "grass", "dirt"};
                 break;
             // flat earth, acts as case 0
             default:
